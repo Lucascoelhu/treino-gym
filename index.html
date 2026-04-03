@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IronFlow — Gerador de Tokens Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080809;--surface:#111113;--surface2:#1a1a1e;--border:#252528;
+  --accent:#ff4d00;--gold:#f5c518;--text:#f0f0f0;--text2:#888;--text3:#444;
+  --success:#22c55e;--danger:#ef4444;--warn:#f59e0b;
+  --radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;line-height:1}
+
+/* LAYOUT */
+.admin-wrap{max-width:900px;margin:0 auto;padding:32px 20px}
+.admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:14px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--text)}
+.logo span{color:var(--accent)}
+.logo sub{font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-left:8px}
+.admin-badge{background:rgba(255,77,0,.12);border:1px solid rgba(255,77,0,.3);color:var(--accent);font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.1em}
+
+/* AUTH */
+#authWrap{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:380px}
+.auth-box .logo{text-align:center;margin-bottom:24px;display:block}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);font-weight:600}
+.fc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;color:var(--text);font-size:14px;outline:none;width:100%;transition:border-color .2s;font-family:'DM Sans',sans-serif}
+.fc:focus{border-color:var(--accent)}
+.btn{padding:11px 18px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:7px;font-family:'DM Sans',sans-serif}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#e04400}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-gold{background:var(--gold);color:#000;font-weight:700}.btn-gold:hover{background:#e6b800}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:7px 12px;font-size:12px}
+.btn-block{width:100%;justify-content:center}
+.err{color:var(--danger);font-size:12px;text-align:center;min-height:18px}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* GENERATE SECTION */
+.generate-form{display:flex;flex-direction:column;gap:12px}
+.result-box{background:var(--surface2);border:1px solid rgba(245,197,24,.3);border-radius:8px;padding:16px;display:none}
+.result-box.show{display:block}
+.token-display{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--gold);letter-spacing:.06em;word-break:break-all;margin-bottom:10px}
+.token-meta{font-size:12px;color:var(--text2)}
+.token-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* TOKENS TABLE */
+.tokens-table{width:100%;border-collapse:collapse}
+.tokens-table th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-weight:600;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.tokens-table td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;vertical-align:middle}
+.tokens-table tr:last-child td{border-bottom:none}
+.tokens-table tr:hover td{background:rgba(255,255,255,.02)}
+.token-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold)}
+.status-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em}
+.status-available{background:rgba(34,197,94,.12);color:var(--success);border:1px solid rgba(34,197,94,.25)}
+.status-used{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
+
+/* STATS */
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.stat-mini{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;flex:1;min-width:100px;text-align:center}
+.stat-mini-val{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent)}
+.stat-mini-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-top:2px}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;display:flex;gap:8px;align-items:center;animation:tin .25s ease;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+@keyframes tin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{border-color:rgba(34,197,94,.35)}
+.toast.error{border-color:rgba(239,68,68,.35)}
+
+/* SEARCH */
+.search-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.search-row input,.search-row select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;flex:1;min-width:140px;font-family:'DM Sans',sans-serif}
+.search-row input:focus,.search-row select:focus{border-color:var(--accent)}
+
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authWrap">
+  <div class="auth-box">
+    <div class="logo" style="text-align:center;display:block;margin-bottom:24px">IRON<span>FLOW</span> <sub>ADMIN</sub></div>
+    <div class="form-group">
+      <label>E-mail admin</label>
+      <input type="email" class="fc" id="adminEmail" placeholder="admin@seudominio.com">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" class="fc" id="adminPass" placeholder="••••••••">
+    </div>
+    <div class="err" id="loginErr"></div>
+    <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="adminLogin()">Entrar no Admin</button>
+  </div>
+</div>
+
+<!-- APP ADMIN -->
+<div id="adminWrap" style="display:none">
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <div>
+        <div class="logo">IRON<span>FLOW</span> <sub>Admin</sub></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px" id="adminUserEmail"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="admin-badge">🔐 Painel Admin</span>
+        <button class="btn btn-secondary btn-sm" onclick="doLogout()">Sair</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="stat-mini">
+        <div class="stat-mini-val" id="stTotal">0</div>
+        <div class="stat-mini-label">Total de tokens</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" id="stAvailable" style="color:var(--success)">0</div>
+        <div class="stat-mini-label">Disponíveis</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" id="stUsed" style="color:var(--danger)">0</div>
+        <div class="stat-mini-label">Utilizados</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" id="stRevenue" style="color:var(--gold)">R$ 0</div>
+        <div class="stat-mini-label">Receita estimada</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- GERAR TOKEN -->
+      <div class="card">
+        <div class="card-title">⚡ Gerar Token</div>
+        <div class="generate-form">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Identificação (opcional)</label>
+            <input type="text" class="fc" id="genNote" placeholder="Ex: João Silva — PIX 02/01">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Quantidade de tokens</label>
+            <select class="fc" id="genQty">
+              <option value="1">1 token</option>
+              <option value="2">2 tokens</option>
+              <option value="3">3 tokens</option>
+              <option value="5">5 tokens</option>
+              <option value="10">10 tokens</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Duração do plano</label>
+            <select class="fc" id="genDuration">
+              <option value="30">30 dias (padrão)</option>
+              <option value="60">60 dias</option>
+              <option value="90">90 dias</option>
+              <option value="365">1 ano</option>
+            </select>
+          </div>
+          <button class="btn btn-gold btn-block" onclick="generateTokens()">
+            🔑 Gerar Token(s)
+          </button>
+        </div>
+
+        <div class="result-box" id="resultBox">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px">Token(s) gerado(s)</div>
+          <div id="generatedTokensDisplay"></div>
+        </div>
+      </div>
+
+      <!-- INFO -->
+      <div class="card">
+        <div class="card-title">📋 Como funciona</div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:13px;color:var(--text2)">
+          <div style="display:flex;gap:10px">
+            <span style="color:var(--accent);font-weight:700;flex-shrink:0">1.</span>
+            <span>Cliente faz o <strong style="color:var(--text)">PIX de R$ 19,90</strong> e envia o comprovante</span>
+          </div>
+          <div style="display:flex;gap:10px">
+            <span style="color:var(--accent);font-weight:700;flex-shrink:0">2.</span>
+            <span>Você confirma o pagamento e gera um token aqui</span>
+          </div>
+          <div style="display:flex;gap:10px">
+            <span style="color:var(--accent);font-weight:700;flex-shrink:0">3.</span>
+            <span>Envie a chave <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--gold)">IF-XXXX...</code> para o cliente</span>
+          </div>
+          <div style="display:flex;gap:10px">
+            <span style="color:var(--accent);font-weight:700;flex-shrink:0">4.</span>
+            <span>Cliente insere a chave no app → <strong style="color:var(--success)">Pro ativado por 30 dias</strong></span>
+          </div>
+          <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px;margin-top:4px">
+            <strong style="color:var(--danger)">⚠️ Segurança:</strong> Cada token só pode ser usado <strong>uma vez</strong>. Após o uso, é marcado no Firestore.
+          </div>
+          <div style="background:rgba(245,197,24,.07);border:1px solid rgba(245,197,24,.2);border-radius:8px;padding:12px">
+            <strong style="color:var(--gold)">🔐 Regras Firestore:</strong> Proteja a coleção <code>tokens</code> com rules para que apenas usuários autenticados possam ler/verificar, e ninguém possa criar tokens pelo cliente.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA DE TOKENS -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span>📊 Todos os Tokens</span>
+        <button class="btn btn-secondary btn-sm" onclick="loadTokens()">↻ Atualizar</button>
+      </div>
+      <div class="search-row">
+        <input type="text" id="searchToken" placeholder="🔍 Buscar token ou nota..." oninput="filterTokens()">
+        <select id="filterStatus" onchange="filterTokens()">
+          <option value="">Todos</option>
+          <option value="available">Disponíveis</option>
+          <option value="used">Utilizados</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tokens-table">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Nota</th>
+              <th>Duração</th>
+              <th>Status</th>
+              <th>Criado em</th>
+              <th>Usado por</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tokensTableBody">
+            <tr><td colspan="7" class="empty">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FIRESTORE RULES -->
+    <div class="card">
+      <div class="card-title">🛡️ Regras de Segurança — Firestore</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Copie estas regras para o seu console Firebase → Firestore → Regras:</p>
+      <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#aef;overflow-x:auto;line-height:1.7"><code>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Usuários: só o próprio usuário acessa seus dados
+    match /users/{userId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+
+      match /workouts/{workoutId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+      match /exercises/{exerciseId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+      match /history/{historyId} {
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
+      }
+    }
+
+    // Tokens: qualquer usuário autenticado pode LER (verificar)
+    // mas NUNCA criar ou editar via cliente (só pelo admin SDK)
+    match /tokens/{tokenId} {
+      allow read: if request.auth != null;
+      // Permite que o cliente marque o token como usado (update)
+      // mas só se o token ainda não foi usado
+      allow update: if request.auth != null
+                    && resource.data.used == false;
+      // Nenhum cliente pode criar ou deletar tokens
+      allow create, delete: if false;
+    }
+  }
+}</code></pre>
+      <button class="btn btn-secondary btn-sm" style="margin-top:12px" onclick="copyRules()">Copiar regras</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ===================================================
+// FIREBASE CONFIG — MESMA DO APP PRINCIPAL
+// ===================================================
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
+};
+
+// UID(s) dos admins — coloque o UID do seu usuário admin aqui
+const ADMIN_UIDS = ["SEU_UID_ADMIN_AQUI"];
+
+const PRICE_PER_TOKEN = 19.90;
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+let allTokens = [];
+
+// ===================================================
+// AUTH
+// ===================================================
+auth.onAuthStateChanged(user => {
+  if (user && ADMIN_UIDS.includes(user.uid)) {
+    document.getElementById('authWrap').style.display  = 'none';
+    document.getElementById('adminWrap').style.display = 'block';
+    document.getElementById('adminUserEmail').textContent = user.email;
+    loadTokens();
+  } else if (user) {
+    auth.signOut();
+    document.getElementById('loginErr').textContent = 'Acesso negado. Você não é admin.';
+  } else {
+    document.getElementById('authWrap').style.display  = 'flex';
+    document.getElementById('adminWrap').style.display = 'none';
+  }
+});
+
+async function adminLogin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass  = document.getElementById('adminPass').value;
+  const err   = document.getElementById('loginErr');
+  err.textContent = '';
+  try { await auth.signInWithEmailAndPassword(email, pass); }
+  catch(e) {
+    const msgs = { 'auth/wrong-password':'Senha incorreta.', 'auth/user-not-found':'Usuário não encontrado.', 'auth/invalid-email':'E-mail inválido.' };
+    err.textContent = msgs[e.code] || e.message;
+  }
+}
+
+function doLogout() { auth.signOut(); }
+
+// ===================================================
+// GERAR TOKEN
+// ===================================================
+function generateTokenString() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let token   = 'IF-';
+  for (let i = 0; i < 16; i++) {
+    if (i === 8) token += '-';
+    token += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return token;
+}
+
+async function generateTokens() {
+  const note     = document.getElementById('genNote').value.trim();
+  const qty      = parseInt(document.getElementById('genQty').value);
+  const duration = parseInt(document.getElementById('genDuration').value);
+  const generated = [];
+
+  const batch = db.batch();
+  for (let i = 0; i < qty; i++) {
+    let token;
+    do { token = generateTokenString(); } while (allTokens.some(t => t.id === token));
+
+    const data = {
+      used: false, note: note || '—', duration,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: auth.currentUser.uid, usedBy: null, usedAt: null
+    };
+    batch.set(db.collection('tokens').doc(token), data);
+    generated.push({ token, data });
+  }
+  await batch.commit();
+
+  // Exibe resultado
+  const box = document.getElementById('resultBox');
+  const disp = document.getElementById('generatedTokensDisplay');
+  box.classList.add('show');
+  disp.innerHTML = generated.map(g => `
+    <div style="margin-bottom:${generated.length>1?'12px':'0'}">
+      <div class="token-display">${g.token}</div>
+      <div class="token-meta">${duration} dias · ${note || 'Sem nota'}</div>
+      <div class="token-actions">
+        <button class="btn btn-secondary btn-sm" onclick="copyText('${g.token}')">📋 Copiar chave</button>
+        <button class="btn btn-primary btn-sm" onclick="copyMsg('${g.token}', ${duration})">📤 Copiar mensagem</button>
+      </div>
+    </div>`).join('<hr style="border-color:var(--border);margin:12px 0">');
+
+  await loadTokens();
+  document.getElementById('genNote').value = '';
+  showToast(`✅ ${qty} token(s) gerado(s)!`, 'success');
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copiado!', 'success'));
+}
+
+function copyMsg(token, duration) {
+  const msg = `🏋️ *IronFlow Pro ativado!*\n\nOlá! Segue sua chave de ativação:\n\n🔑 \`${token}\`\n\nAbra o app → aba ⭐ Pro → cole a chave → *Ativar*.\n\nAcesso válido por *${duration} dias*. Qualquer dúvida é só chamar! 💪`;
+  navigator.clipboard.writeText(msg).then(() => showToast('Mensagem copiada!', 'success'));
+}
+
+function copyRules() {
+  const code = document.querySelector('pre code').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('Regras copiadas!', 'success'));
+}
+
+// ===================================================
+// CARREGAR E LISTAR TOKENS
+// ===================================================
+async function loadTokens() {
+  const snap = await db.collection('tokens').orderBy('createdAt','desc').get();
+  allTokens  = snap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date() }));
+  updateStats();
+  filterTokens();
+}
+
+function updateStats() {
+  const used      = allTokens.filter(t => t.used).length;
+  const available = allTokens.length - used;
+  document.getElementById('stTotal').textContent     = allTokens.length;
+  document.getElementById('stAvailable').textContent = available;
+  document.getElementById('stUsed').textContent      = used;
+  document.getElementById('stRevenue').textContent   = `R$ ${(used * PRICE_PER_TOKEN).toFixed(2).replace('.',',')}`;
+}
+
+function filterTokens() {
+  const q      = document.getElementById('searchToken').value.toLowerCase();
+  const status = document.getElementById('filterStatus').value;
+  const list   = allTokens.filter(t => {
+    const matchQ = !q || t.id.toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q) || (t.usedBy||'').toLowerCase().includes(q);
+    const matchS = !status || (status === 'available' && !t.used) || (status === 'used' && t.used);
+    return matchQ && matchS;
+  });
+  renderTable(list);
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('tokensTableBody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhum token encontrado.</td></tr>'; return; }
+  tbody.innerHTML = list.map(t => {
+    const date = t.createdAt instanceof Date ? t.createdAt.toLocaleDateString('pt-BR') : '—';
+    const usedAt = t.usedAt ? (t.usedAt.toDate ? t.usedAt.toDate().toLocaleDateString('pt-BR') : '—') : '—';
+    return `
+    <tr>
+      <td><span class="token-code">${t.id}</span></td>
+      <td style="color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||'—'}</td>
+      <td style="color:var(--text2)">${t.duration||30}d</td>
+      <td><span class="status-badge ${t.used?'status-used':'status-available'}">${t.used?'Usado':'Disponível'}</span></td>
+      <td style="color:var(--text2)">${date}</td>
+      <td style="font-size:12px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.used?(t.usedBy||'—'):'—'}${t.used?' ('+usedAt+')':''}</td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-secondary btn-sm" onclick="copyText('${t.id}')" title="Copiar token">📋</button>
+          ${!t.used ? `<button class="btn btn-danger btn-sm" onclick="revokeToken('${t.id}')" title="Revogar">🗑️</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function revokeToken(id) {
+  if (!confirm(`Revogar o token ${id}? Esta ação não pode ser desfeita.`)) return;
+  await db.collection('tokens').doc(id).delete();
+  allTokens = allTokens.filter(t => t.id !== id);
+  updateStats();
+  filterTokens();
+  showToast('Token revogado.', 'success');
+}
+
+// ===================================================
+// TOAST
+// ===================================================
+function showToast(msg, type='success') {
+  const w = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type==='success'?'✅':'❌'}</span><span>${msg}</span>`;
+  w.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('authWrap').style.display !== 'none') adminLogin();
+});
+</script>
+</body>
+</html>
