@@ -157,7 +157,10 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
     <div id="clients-list"><div class="loader"><div class="spinner"></div>Carregando...</div></div>
   </div>
   <div id="admin-exercicios" class="content" style="display:none">
-    <button class="btn btn-primary" style="margin-bottom:14px" onclick="openAddExercise()">+ Adicionar Exercício</button>
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <input type="text" id="admin-ex-search" placeholder="🔍 Buscar exercício..." oninput="filterAdminExercises()" style="flex:1;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px;outline:none">
+      <button class="btn btn-primary" style="width:auto;padding:10px 16px;white-space:nowrap" onclick="openAddExercise()">+ Adicionar</button>
+    </div>
     <div id="exercises-list"><div class="loader"><div class="spinner"></div></div></div>
   </div>
   <div id="admin-tokens" class="content" style="display:none">
@@ -379,6 +382,73 @@ function handleGifSlot(e, i) {
 function removeGif(i) {
   pendingGifs.splice(i, 1);
   renderGifSlots();
+}
+
+// ─── SEARCH / FILTER ─────────────────────────────────────────────────────────
+
+function filterAdminExercises() {
+  const q = document.getElementById('admin-ex-search').value.toLowerCase().trim();
+  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Perna','Glúteo','Abdômen','Cardio'];
+  const grouped = {};
+  muscleOrder.forEach(m => grouped[m] = []);
+  allExercises.forEach(ex => {
+    if (!q || ex.name.toLowerCase().includes(q) || ex.muscle.toLowerCase().includes(q)) {
+      if (!grouped[ex.muscle]) grouped[ex.muscle] = [];
+      grouped[ex.muscle].push(ex);
+    }
+  });
+
+  const el = document.getElementById('exercises-list');
+  let html = '';
+  let found = false;
+  muscleOrder.forEach(muscle => {
+    const list = grouped[muscle];
+    if (!list || !list.length) return;
+    found = true;
+    html += `<div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">${MUSCLE_EMOJI[muscle]||'💪'}</span>
+        <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#e85d04">${muscle}</span>
+        <span style="font-size:11px;color:#555;margin-left:2px">${list.length} exercício(s)</span>
+      </div>`;
+    list.forEach(ex => {
+      const gifCount = ex.gifs ? ex.gifs.length : (ex.gifMode && ex.gifMode !== 'none' ? 1 : 0);
+      html += `<div class="exercise-card" id="exrow-${ex.id}">
+        <div id="exgif-admin-${ex.id}" style="width:60px;height:60px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
+        <div class="ex-info">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-detail">${ex.sets}x${ex.reps} · ${ex.rest}s descanso · <span style="color:#e85d04">${gifCount} gif(s)</span></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-sm btn-secondary" onclick="openEditExercise('${ex.id}')">✏️</button>
+          <button class="btn-sm btn-danger" onclick="deleteExercise('${ex.id}')">×</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  if (!found) html = '<div class="empty"><div class="empty-icon">🔍</div>Nenhum exercício encontrado</div>';
+  el.innerHTML = html;
+
+  // recarrega thumbnails
+  allExercises.forEach(ex => {
+    loadGifSrcs(ex).then(srcs => {
+      if (srcs.length > 0) {
+        const thumb = document.getElementById('exgif-admin-'+ex.id);
+        if (thumb) thumb.innerHTML = `<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
+      }
+    });
+  });
+}
+
+function filterClientExercises() {
+  const q = document.getElementById('client-ex-search')?.value.toLowerCase().trim() || '';
+  if (!clientWorkouts.exercises) return;
+  document.querySelectorAll('#client-hoje .exercise-card').forEach(card => {
+    const name = card.querySelector('.ex-name')?.textContent.toLowerCase() || '';
+    const detail = card.querySelector('.ex-detail')?.textContent.toLowerCase() || '';
+    card.style.display = (!q || name.includes(q) || detail.includes(q)) ? '' : 'none';
+  });
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -833,7 +903,8 @@ async function loadClientData() {
       <div style="font-size:12px;color:#888;margin-top:4px">${doneSets} de ${totalSets} séries</div>
     </div>`;
 
-    el.innerHTML = html;
+    const searchBar = `<input type="text" id="client-ex-search" placeholder="🔍 Buscar exercício..." oninput="filterClientExercises()" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px;outline:none;margin-bottom:12px">`;
+    el.innerHTML = searchBar + html;
     clientWorkouts = { exercises, completedSets, totalSets, doneSets, logRef, todayStr };
 
     // carrega GIFs com carrossel
