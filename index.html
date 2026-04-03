@@ -220,7 +220,7 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
       <label>Grupo muscular</label>
       <select id="ex-muscle">
         <option>Peito</option><option>Costas</option><option>Ombro</option>
-        <option>Bíceps</option><option>Tríceps</option><option>Perna</option>
+        <option>Bíceps</option><option>Tríceps</option><option>Antebraço</option><option>Perna</option>
         <option>Glúteo</option><option>Abdômen</option><option>Cardio</option>
       </select>
     </div>
@@ -266,7 +266,7 @@ const CHUNK_SIZE = 700000; // ~700KB por chunk — base64 expande ~33%, mantém 
 const MAX_GIFS = 5;
 const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DAYS_FULL = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const MUSCLE_EMOJI = {Peito:'💪',Costas:'🔙',Ombro:'🦾',Bíceps:'💪',Tríceps:'💪',Perna:'🦵',Glúteo:'🍑',Abdômen:'🫀',Cardio:'🏃'};
+const MUSCLE_EMOJI = {Peito:'💪',Costas:'🔙',Ombro:'🦾',Bíceps:'💪',Tríceps:'💪',Antebraço:'🤜',Perna:'🦵',Glúteo:'🍑',Abdômen:'🫀',Cardio:'🏃'};
 
 let currentUser = null, currentUserData = null, allExercises = [];
 let authMode = 'login';
@@ -413,7 +413,7 @@ function removeGif(i) {
 
 function filterAdminExercises() {
   const q = document.getElementById('admin-ex-search').value.toLowerCase().trim();
-  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Perna','Glúteo','Abdômen','Cardio'];
+  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio'];
   const grouped = {};
   muscleOrder.forEach(m => grouped[m] = []);
   allExercises.forEach(ex => {
@@ -575,7 +575,7 @@ async function renderExercisesList() {
   const el = document.getElementById('exercises-list');
   if (!allExercises.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🏋️</div>Nenhum exercício ainda</div>'; return; }
 
-  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Perna','Glúteo','Abdômen','Cardio'];
+  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio'];
   const grouped = {};
   muscleOrder.forEach(m => grouped[m] = []);
   allExercises.forEach(ex => {
@@ -826,7 +826,7 @@ function editDayWorkout(key) {
 
 function renderDayExercises(q) {
   const w = assignTemplate[editingDayKey]||{};
-  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Perna','Glúteo','Abdômen','Cardio'];
+  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio'];
 
   let html = `<div class="field"><label>Nome do treino</label><input type="text" id="day-label" value="${w.label||''}" placeholder="Ex: Peito e Tríceps"></div>
   <input type="text" id="assign-search" placeholder="🔍 Buscar exercício..." oninput="renderDayExercises(this.value)" value="${q}"
