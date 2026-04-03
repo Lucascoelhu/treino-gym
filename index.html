@@ -505,6 +505,10 @@ async function doAuth() {
       if (!name) { showMsg(msg,'Insira seu nome','error'); resetAuthBtn(); return; }
       const tokenDoc = await db.collection('tokens').doc(code).get();
       if (!tokenDoc.exists || tokenDoc.data().used) { showMsg(msg,'Código inválido ou já utilizado','error'); resetAuthBtn(); return; }
+      const tokenData = tokenDoc.data();
+      if (tokenData.expiresAt && new Date(tokenData.expiresAt.toDate ? tokenData.expiresAt.toDate() : tokenData.expiresAt) < new Date()) {
+        showMsg(msg,'Este código expirou. Solicite um novo ao seu personal.','error'); resetAuthBtn(); return;
+      }
       const cred = await auth.createUserWithEmailAndPassword(email, pass);
       await db.collection('users').doc(cred.user.uid).set({ name, email, code, role:'client', createdAt: firebase.firestore.FieldValue.serverTimestamp(), weeklyTemplate:{} });
       await db.collection('tokens').doc(code).update({ used:true, usedBy:cred.user.uid });
@@ -760,7 +764,9 @@ async function generateToken() {
   if (!code) { const base=name.split(' ')[0].substring(0,6).toUpperCase(); code=base+Math.floor(100+Math.random()*900); }
   const existing = await db.collection('tokens').doc(code).get();
   if (existing.exists) { alert('Código já existe'); return; }
-  await db.collection('tokens').doc(code).set({ name, code, used:false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
+  await db.collection('tokens').doc(code).set({ name, code, used:false, createdAt: firebase.firestore.FieldValue.serverTimestamp(), expiresAt });
   document.getElementById('token-name').value='';
   document.getElementById('token-code').value='';
   loadTokens();
@@ -771,6 +777,20 @@ async function loadTokens() {
   const el = document.getElementById('tokens-list');
   el.innerHTML = snap.docs.map(d => {
     const t = d.data();
+    let expLabel = '', expColor = '';
+    if (!t.used && t.expiresAt) {
+      const exp = t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt);
+      const diff = Math.ceil((exp - new Date()) / (1000*60*60*24));
+      if (diff < 0) { expLabel = 'Expirado'; expColor = 'color:#ef4444'; }
+      else if (diff === 0) { expLabel = 'Expira hoje'; expColor = 'color:#ef4444'; }
+      else if (diff <= 5) { expLabel = `Expira em ${diff}d`; expColor = 'color:#fb923c'; }
+      else { expLabel = `Expira em ${diff}d`; expColor = 'color:#888'; }
+    }
+    const statusTag = t.used
+      ? '<span class="tag tag-green">Usado</span>'
+      : (t.expiresAt && (t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt)) < new Date())
+        ? '<span class="tag tag-red" style="background:#3d0000;color:#ef4444">Expirado</span>'
+        : '<span class="tag tag-orange">Disponível</span>';
     return `<div class="card">
       <div class="flex-between">
         <div>
@@ -779,8 +799,9 @@ async function loadTokens() {
             <code style="background:#1f1000;color:#fb923c;padding:4px 10px;border-radius:6px;font-size:14px">${t.code}</code>
             <button class="copy-btn" onclick="navigator.clipboard.writeText('${t.code}').then(()=>alert('Copiado!'))">Copiar</button>
           </div>
+          ${expLabel ? `<div style="font-size:12px;margin-top:6px;${expColor}">${expLabel}</div>` : ''}
         </div>
-        <span class="tag ${t.used?'tag-green':'tag-orange'}">${t.used?'Usado':'Disponível'}</span>
+        ${statusTag}
       </div>
     </div>`;
   }).join('') || '<div class="empty"><div class="empty-icon">🎫</div>Nenhum token</div>';
