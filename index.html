@@ -479,27 +479,49 @@ async function loadAdminData() {
 async function renderExercisesList() {
   const el = document.getElementById('exercises-list');
   if (!allExercises.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🏋️</div>Nenhum exercício ainda</div>'; return; }
-  el.innerHTML = allExercises.map(ex => {
-    const gifCount = ex.gifs ? ex.gifs.length : (ex.gifMode && ex.gifMode !== 'none' ? 1 : 0);
-    return `<div class="exercise-card" id="exrow-${ex.id}">
-      <div id="exgif-admin-${ex.id}" style="width:60px;height:60px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
-      <div class="ex-info">
-        <div class="ex-name">${ex.name}</div>
-        <div class="ex-detail">${ex.muscle} · ${ex.sets}x${ex.reps} · ${ex.rest}s · <span style="color:#e85d04">${gifCount} gif(s)</span></div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn-sm btn-secondary" onclick="openEditExercise('${ex.id}')">✏️</button>
-        <button class="btn-sm btn-danger" onclick="deleteExercise('${ex.id}')">×</button>
-      </div>
-    </div>`;
-  }).join('');
 
-  // carrega primeiro gif de cada exercício como thumbnail no admin
+  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Perna','Glúteo','Abdômen','Cardio'];
+  const grouped = {};
+  muscleOrder.forEach(m => grouped[m] = []);
+  allExercises.forEach(ex => {
+    if (grouped[ex.muscle]) grouped[ex.muscle].push(ex);
+    else { grouped[ex.muscle] = grouped[ex.muscle] || []; grouped[ex.muscle].push(ex); }
+  });
+
+  let html = '';
+  muscleOrder.forEach(muscle => {
+    const list = grouped[muscle];
+    if (!list || !list.length) return;
+    html += `<div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">${MUSCLE_EMOJI[muscle]||'💪'}</span>
+        <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#e85d04">${muscle}</span>
+        <span style="font-size:11px;color:#555;margin-left:2px">${list.length} exercício(s)</span>
+      </div>`;
+    list.forEach(ex => {
+      const gifCount = ex.gifs ? ex.gifs.length : (ex.gifMode && ex.gifMode !== 'none' ? 1 : 0);
+      html += `<div class="exercise-card" id="exrow-${ex.id}">
+        <div id="exgif-admin-${ex.id}" style="width:60px;height:60px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
+        <div class="ex-info">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-detail">${ex.sets}x${ex.reps} · ${ex.rest}s descanso · <span style="color:#e85d04">${gifCount} gif(s)</span></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-sm btn-secondary" onclick="openEditExercise('${ex.id}')">✏️</button>
+          <button class="btn-sm btn-danger" onclick="deleteExercise('${ex.id}')">×</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  el.innerHTML = html;
+
   for (const ex of allExercises) {
     loadGifSrcs(ex).then(srcs => {
       if (srcs.length > 0) {
-        const el = document.getElementById('exgif-admin-'+ex.id);
-        if (el) el.innerHTML = `<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
+        const thumb = document.getElementById('exgif-admin-'+ex.id);
+        if (thumb) thumb.innerHTML = `<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
       }
     });
   }
