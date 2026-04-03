@@ -242,7 +242,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 const ADMIN_EMAIL = "lukcoelhu@hotmail.com";
-const CHUNK_SIZE = 800000;
+const CHUNK_SIZE = 700000; // ~700KB por chunk — base64 expande ~33%, mantém abaixo do limite de 1MB do Firestore
 const MAX_GIFS = 5;
 const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DAYS_FULL = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
