@@ -152,6 +152,19 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
   </div>
 </div>
 
+<!-- ACESSO EXPIRADO -->
+<div id="screen-expired" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-logo">Coelho<span>Treino</span></div>
+    <div class="auth-card" style="text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <h2 style="margin-bottom:8px">Acesso expirado</h2>
+      <p style="color:#888;font-size:14px;margin-bottom:24px">Seu plano venceu. Entre em contato com seu personal para renovar o acesso.</p>
+      <button class="btn btn-secondary" onclick="logout()">Sair</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN -->
 <div id="screen-admin" class="screen">
   <div class="topbar">
@@ -505,10 +518,6 @@ async function doAuth() {
       if (!name) { showMsg(msg,'Insira seu nome','error'); resetAuthBtn(); return; }
       const tokenDoc = await db.collection('tokens').doc(code).get();
       if (!tokenDoc.exists || tokenDoc.data().used) { showMsg(msg,'Código inválido ou já utilizado','error'); resetAuthBtn(); return; }
-      const tokenData = tokenDoc.data();
-      if (tokenData.expiresAt && new Date(tokenData.expiresAt.toDate ? tokenData.expiresAt.toDate() : tokenData.expiresAt) < new Date()) {
-        showMsg(msg,'Este código expirou. Solicite um novo ao seu personal.','error'); resetAuthBtn(); return;
-      }
       const cred = await auth.createUserWithEmailAndPassword(email, pass);
       await db.collection('users').doc(cred.user.uid).set({ name, email, code, role:'client', createdAt: firebase.firestore.FieldValue.serverTimestamp(), weeklyTemplate:{} });
       await db.collection('tokens').doc(code).update({ used:true, usedBy:cred.user.uid });
@@ -535,7 +544,15 @@ auth.onAuthStateChanged(async user => {
       loadAdminData();
     } else {
       const doc = await db.collection('users').doc(user.uid).get();
-      if (doc.exists) { currentUserData = doc.data(); showScreen('client'); loadClientData(); }
+      if (doc.exists) {
+        currentUserData = doc.data();
+        const exp = currentUserData.accessExpiresAt;
+        if (exp) {
+          const expDate = exp.toDate ? exp.toDate() : new Date(exp);
+          if (expDate < new Date()) { showScreen('expired'); return; }
+        }
+        showScreen('client'); loadClientData();
+      }
       else logout();
     }
   } else {
@@ -560,12 +577,26 @@ async function loadAdminData() {
   usersSnap.docs.forEach(d => {
     const u = d.data();
     const initials = (u.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    let accessLabel = '', accessColor = '', accessBg = '';
+    if (u.accessExpiresAt) {
+      const exp = u.accessExpiresAt.toDate ? u.accessExpiresAt.toDate() : new Date(u.accessExpiresAt);
+      const diff = Math.ceil((exp - new Date()) / (1000*60*60*24));
+      if (diff < 0) { accessLabel = 'Expirado'; accessColor = '#ef4444'; accessBg = '#3d0000'; }
+      else if (diff <= 5) { accessLabel = `Expira em ${diff}d`; accessColor = '#fb923c'; accessBg = '#3d1a00'; }
+      else { accessLabel = `Ativo — ${diff}d restantes`; accessColor = '#4ade80'; accessBg = '#0d2c19'; }
+    } else {
+      accessLabel = 'Sem acesso definido'; accessColor = '#888'; accessBg = '#222';
+    }
     html += `<div class="client-card">
       <div class="flex-between">
         <div class="flex"><div class="avatar">${initials}</div>
           <div><div style="font-weight:600">${u.name}</div><div class="client-code mt8">${u.code}</div></div>
         </div>
         <button class="btn-sm btn-primary" onclick="openAssignWorkout('${d.id}','${u.name}')">Treino</button>
+      </div>
+      <div class="mt8 flex-between">
+        <span class="tag" style="background:${accessBg};color:${accessColor}">${accessLabel}</span>
+        <button class="btn-sm btn-secondary" onclick="renewAccess('${d.id}','${u.name}')">Renovar 30d</button>
       </div>
       <div class="mt8"><span class="tag tag-gray">${u.email}</span></div>
     </div>`;
@@ -764,9 +795,7 @@ async function generateToken() {
   if (!code) { const base=name.split(' ')[0].substring(0,6).toUpperCase(); code=base+Math.floor(100+Math.random()*900); }
   const existing = await db.collection('tokens').doc(code).get();
   if (existing.exists) { alert('Código já existe'); return; }
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30);
-  await db.collection('tokens').doc(code).set({ name, code, used:false, createdAt: firebase.firestore.FieldValue.serverTimestamp(), expiresAt });
+  await db.collection('tokens').doc(code).set({ name, code, used:false, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
   document.getElementById('token-name').value='';
   document.getElementById('token-code').value='';
   loadTokens();
@@ -777,20 +806,6 @@ async function loadTokens() {
   const el = document.getElementById('tokens-list');
   el.innerHTML = snap.docs.map(d => {
     const t = d.data();
-    let expLabel = '', expColor = '';
-    if (!t.used && t.expiresAt) {
-      const exp = t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt);
-      const diff = Math.ceil((exp - new Date()) / (1000*60*60*24));
-      if (diff < 0) { expLabel = 'Expirado'; expColor = 'color:#ef4444'; }
-      else if (diff === 0) { expLabel = 'Expira hoje'; expColor = 'color:#ef4444'; }
-      else if (diff <= 5) { expLabel = `Expira em ${diff}d`; expColor = 'color:#fb923c'; }
-      else { expLabel = `Expira em ${diff}d`; expColor = 'color:#888'; }
-    }
-    const statusTag = t.used
-      ? '<span class="tag tag-green">Usado</span>'
-      : (t.expiresAt && (t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt)) < new Date())
-        ? '<span class="tag tag-red" style="background:#3d0000;color:#ef4444">Expirado</span>'
-        : '<span class="tag tag-orange">Disponível</span>';
     return `<div class="card">
       <div class="flex-between">
         <div>
@@ -799,15 +814,22 @@ async function loadTokens() {
             <code style="background:#1f1000;color:#fb923c;padding:4px 10px;border-radius:6px;font-size:14px">${t.code}</code>
             <button class="copy-btn" onclick="navigator.clipboard.writeText('${t.code}').then(()=>alert('Copiado!'))">Copiar</button>
           </div>
-          ${expLabel ? `<div style="font-size:12px;margin-top:6px;${expColor}">${expLabel}</div>` : ''}
         </div>
-        ${statusTag}
+        <span class="tag ${t.used?'tag-green':'tag-orange'}">${t.used?'Usado':'Disponível'}</span>
       </div>
     </div>`;
   }).join('') || '<div class="empty"><div class="empty-icon">🎫</div>Nenhum token</div>';
 }
 
 // ─── ASSIGN WORKOUT ───────────────────────────────────────────────────────────
+
+async function renewAccess(uid, name) {
+  const exp = new Date();
+  exp.setDate(exp.getDate() + 30);
+  await db.collection('users').doc(uid).update({ accessExpiresAt: exp });
+  alert(`Acesso de ${name} renovado por 30 dias!`);
+  loadAdminData();
+}
 
 async function openAssignWorkout(uid, name) {
   assignUserId = uid;
