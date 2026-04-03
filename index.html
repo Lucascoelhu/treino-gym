@@ -120,7 +120,7 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
 <!-- AUTH -->
 <div id="screen-auth" class="screen active">
   <div class="auth-wrap">
-    <div class="auth-logo">Coelho<span>treino</span></div>
+    <div class="auth-logo">Coelho<span>Treino</span></div>
     <div class="auth-sub">Seu treino, seu progresso</div>
     <div class="auth-card">
       <h2 id="auth-title">Entrar</h2>
@@ -896,8 +896,14 @@ async function loadClientData() {
     }
 
     const logRef = db.collection('logs').doc(`${currentUser.uid}_${todayStr}`);
-    const logDoc = await logRef.get();
-    const completedSets = logDoc.exists?(logDoc.data().completedSets||{}):{};
+    let logDoc = null;
+    let completedSets = {};
+    try {
+      logDoc = await logRef.get();
+      completedSets = logDoc.exists ? (logDoc.data().completedSets||{}) : {};
+    } catch(e) {
+      console.warn('Sem permissão para ler logs, iniciando zerado.', e);
+    }
     let totalSets=0, doneSets=0;
 
     let html = `<div class="flex mt8" style="gap:10px;align-items:center;margin-bottom:14px">
