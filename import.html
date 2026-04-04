@@ -211,7 +211,7 @@ function toBase64(file) {
 }
 
 function fileNameToExName(f) {
-  return f.replace(/\.[^.]+$/, '').replace(/[_\-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+  return f.replace(/\.[^.]+$/, '').replace(/[_\-~]+/g, ' ').replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, ' ').replace(/\s+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
