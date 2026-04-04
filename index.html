@@ -194,7 +194,12 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
     <div class="auth-card" style="text-align:center">
       <div style="font-size:48px;margin-bottom:16px">🔒</div>
       <h2 style="margin-bottom:8px">Acesso expirado</h2>
-      <p style="color:#888;font-size:14px;margin-bottom:24px">Seu plano venceu. Entre em contato com seu personal para renovar o acesso.</p>
+      <p style="color:#888;font-size:14px;margin-bottom:20px">Seu plano venceu. Renove agora via PIX para continuar treinando!</p>
+      <div onclick="copyPix()" style="cursor:pointer;background:#0d2c19;border:1.5px solid #166534;border-radius:12px;padding:14px 16px;margin-bottom:6px">
+        <div style="font-size:11px;color:#4ade80;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">&#128178; Chave PIX &mdash; toque para copiar</div>
+        <div style="font-size:15px;font-weight:700;color:#fff">LukCoelhu@hotmail.com</div>
+      </div>
+      <div id="pix-copied" style="font-size:12px;color:#4ade80;margin-bottom:14px;min-height:18px"></div>
       <button class="btn btn-secondary" onclick="logout()">Sair</button>
     </div>
   </div>
@@ -678,6 +683,22 @@ async function doAuth() {
 function resetAuthBtn() { document.getElementById('auth-btn').textContent = authMode==='register'?'Criar conta':'Entrar'; }
 function showMsg(el,t,type) { el.textContent=t; el.className='msg '+type; }
 function logout() { auth.signOut(); }
+function copyPix() {
+  const key = 'LukCoelhu@hotmail.com';
+  navigator.clipboard.writeText(key).then(() => {
+    const el = document.getElementById('pix-copied');
+    if (el) { el.textContent = '✅ Chave copiada!'; setTimeout(()=>el.textContent='', 3000); }
+  }).catch(() => {
+    // fallback para navegadores sem clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = key; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const el = document.getElementById('pix-copied');
+    if (el) { el.textContent = '✅ Chave copiada!'; setTimeout(()=>el.textContent='', 3000); }
+  });
+}
 
 auth.onAuthStateChanged(async user => {
   if (user) {
