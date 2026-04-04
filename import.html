@@ -19,78 +19,81 @@ h1{font-size:22px;font-weight:700;margin-bottom:4px}
 .drop-icon{font-size:36px;margin-bottom:8px}
 .drop-text{font-size:15px;font-weight:600;margin-bottom:4px}
 .drop-sub{font-size:12px;color:#555}
-
-/* tabela de exercícios */
-.ex-table{width:100%;border-collapse:collapse;margin-top:4px}
-.ex-table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#555;text-align:left;padding:6px 10px;border-bottom:1px solid #222}
-.ex-table td{padding:8px 10px;border-bottom:1px solid #1a1a1a;vertical-align:middle}
-.ex-table tr:last-child td{border-bottom:none}
-.ex-table tr:hover td{background:#111}
-.thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #222}
-.thumb-placeholder{width:48px;height:48px;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-input.inline{background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;color:#fff;font-size:13px;outline:none;width:100%}
+.ex-card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:start;margin-bottom:12px}
+.ex-thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid #222}
+.ex-fields{display:flex;flex-direction:column;gap:8px}
+.ex-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.ex-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;display:block}
+input.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;color:#fff;font-size:13px;outline:none;width:100%}
 input.inline:focus{border-color:#e85d04}
-select.inline{background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:6px 8px;color:#fff;font-size:13px;outline:none}
+select.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:6px 8px;color:#fff;font-size:13px;outline:none}
 select.inline:focus{border-color:#e85d04}
-.remove-btn{background:none;border:none;color:#555;font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+textarea.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;outline:none;width:100%;resize:vertical;min-height:80px;line-height:1.6;font-family:system-ui,sans-serif}
+textarea.inline:focus{border-color:#e85d04}
+.field-group{flex:1;min-width:70px}
+.remove-btn{background:none;border:none;color:#444;font-size:22px;cursor:pointer;padding:0;line-height:1}
 .remove-btn:hover{color:#ef4444}
+.ai-tag{font-size:11px;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;margin-top:2px}
+.ai-tag.loading{background:#1a0a00;color:#fb923c}
+.ai-tag.done{background:#0d2c19;color:#4ade80}
+.ai-tag.error{background:#3d0000;color:#f87171}
 .btn{padding:12px 20px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s}
 .btn-primary{background:#e85d04;color:#fff}
 .btn-primary:hover{background:#d14e00}
 .btn-primary:disabled{background:#5a2a00;color:#888;cursor:not-allowed}
 .btn-secondary{background:#222;color:#fff;border:1px solid #333}
 .btn-secondary:hover{background:#2a2a2a}
+.btn-ai{background:#2d1f5e;color:#c4b5fd;border:1px solid #4c3a8a;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-ai:hover{background:#3b2878}
+.btn-ai:disabled{opacity:.4;cursor:not-allowed}
+.btn-ai-lg{padding:12px 20px;border-radius:8px;font-size:14px}
 .status-bar{background:#111;border-radius:10px;padding:16px;margin-top:16px;display:none}
 .status-title{font-size:13px;font-weight:700;margin-bottom:10px;color:#e85d04}
 .progress-wrap{background:#222;border-radius:4px;height:8px;overflow:hidden;margin-bottom:8px}
 .progress-fill{height:100%;background:#e85d04;border-radius:4px;transition:width .3s}
-.log{max-height:200px;overflow-y:auto;font-size:12px;color:#888;line-height:1.8;font-family:monospace}
-.log .ok{color:#4ade80}
-.log .err{color:#f87171}
-.log .info{color:#fb923c}
+.log{max-height:220px;overflow-y:auto;font-size:12px;color:#888;line-height:1.8;font-family:monospace}
+.log .ok{color:#4ade80}.log .err{color:#f87171}.log .info{color:#fb923c}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid #333;border-top-color:#e85d04;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+.spinner-sm{display:inline-block;width:9px;height:9px;border:2px solid #555;border-top-color:#fb923c;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
 .badge-orange{background:#3d1a00;color:#fb923c}
-.badge-green{background:#0d2c19;color:#4ade80}
-.empty-state{text-align:center;padding:32px 20px;color:#555;font-size:14px}
 .tip{background:#1a0a00;border:1px solid #3d1a00;border-radius:8px;padding:12px 14px;font-size:13px;color:#fb923c;margin-bottom:14px}
-.flex-end{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.flex-end{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
 </style>
 </head>
 <body>
 
 <h1>🤸 Importar Calistenia em Lote</h1>
-<p class="sub">Selecione os GIFs, revise os nomes e clique em Importar tudo.</p>
+<p class="sub">Carregue os GIFs, gere as descrições com IA e importe tudo de uma vez.</p>
 
-<!-- STEP 1: UPLOAD -->
 <div class="card">
   <div class="card-title">① Selecionar GIFs</div>
-  <div class="tip">💡 O nome do arquivo vira o nome do exercício automaticamente. Você pode editar antes de importar.</div>
+  <div class="tip">💡 O nome do arquivo vira o nome do exercício automaticamente. Renomeie antes se quiser (ex: <code>Pull Up.gif</code>).</div>
   <div class="drop-zone" id="drop-zone">
     <input type="file" id="file-input" accept="image/*,image/gif" multiple onchange="handleFiles(this.files)">
     <div class="drop-icon">📂</div>
     <div class="drop-text">Clique ou arraste os GIFs aqui</div>
-    <div class="drop-sub">Selecione vários de uma vez · Aceita GIF, PNG, JPG · Máx 5MB por arquivo</div>
+    <div class="drop-sub">Vários arquivos de uma vez · GIF, PNG, JPG</div>
   </div>
 </div>
 
-<!-- STEP 2: REVIEW TABLE -->
 <div class="card" id="review-card" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div class="card-title" style="margin-bottom:0">② Revisar exercícios</div>
+  <div class="flex-between">
+    <div class="card-title" style="margin-bottom:0">② Revisar e descrever</div>
     <span id="count-badge" class="badge badge-orange">0 exercícios</span>
   </div>
-  <div id="table-wrap">
-    <div class="empty-state">Nenhum arquivo selecionado ainda.</div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn btn-ai btn-ai-lg" id="gen-all-btn" onclick="generateAll()">✨ Gerar TODAS as descrições com IA</button>
+    <button class="btn btn-secondary" onclick="clearAll()" style="padding:10px 16px;font-size:13px">🗑 Limpar tudo</button>
   </div>
+  <div id="ex-list-wrap"></div>
   <div class="flex-end">
-    <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpar tudo</button>
     <button class="btn btn-primary" id="import-btn" onclick="startImport()">⬆ Importar tudo para o Firebase</button>
   </div>
 </div>
 
-<!-- STATUS -->
 <div class="status-bar" id="status-bar">
   <div class="status-title" id="status-title">Importando...</div>
   <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
@@ -99,7 +102,6 @@ select.inline:focus{border-color:#e85d04}
 </div>
 
 <script>
-// ─── FIREBASE CONFIG (igual ao app principal) ─────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDRbCnI0bMRJqxJiPrPe7U6W4hwR3mHE9k",
   authDomain: "treinos-gym-6c819.firebaseapp.com",
@@ -110,134 +112,192 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
 const CHUNK_SIZE = 700000;
+const MUSCLES = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
 
-// exercícios pendentes: [{ name, muscle, sets, reps, rest, file, base64, preview }]
 let exercises = [];
 
-// ─── DRAG & DROP ──────────────────────────────────────────────────────────────
+// ─── FILES ────────────────────────────────────────────────────────────────────
 const dz = document.getElementById('drop-zone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
 
-// ─── FILE HANDLER ─────────────────────────────────────────────────────────────
 async function handleFiles(files) {
-  const arr = Array.from(files);
-  for (const file of arr) {
-    // evita duplicata pelo nome
+  for (const file of Array.from(files)) {
     if (exercises.find(e => e.fileName === file.name)) continue;
     const base64 = await toBase64(file);
     const name = fileNameToExName(file.name);
-    exercises.push({ name, muscle: 'Calistenia', sets: 3, reps: '10', rest: 60, fileName: file.name, base64, preview: base64 });
+    exercises.push({ name, muscle:'Calistenia', sets:3, reps:'10', rest:60, instruction:'', fileName:file.name, base64, preview:base64, aiStatus:'idle' });
   }
-  renderTable();
+  renderList();
 }
 
 function toBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
+  return new Promise((res,rej) => { const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
 }
 
-function fileNameToExName(fileName) {
-  // remove extensão, troca _ e - por espaço, capitaliza
-  return fileName
-    .replace(/\.[^.]+$/, '')
-    .replace(/[_\-]+/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase())
+function fileNameToExName(f) {
+  return f.replace(/\.[^.]+$/,'').replace(/[_\-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderList() {
+  const card = document.getElementById('review-card');
+  const wrap = document.getElementById('ex-list-wrap');
+  document.getElementById('count-badge').textContent = `${exercises.length} exercício(s)`;
+  if (!exercises.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+
+  wrap.innerHTML = exercises.map((ex, i) => {
+    const tag = ex.aiStatus==='loading'
+      ? `<span class="ai-tag loading"><span class="spinner-sm"></span> Gerando...</span>`
+      : ex.aiStatus==='done' ? `<span class="ai-tag done">✅ Gerado pela IA</span>`
+      : ex.aiStatus==='error' ? `<span class="ai-tag error">⚠ Falha — edite manualmente</span>` : '';
+
+    return `<div class="ex-card" id="excard-${i}">
+      <img src="${ex.preview}" class="ex-thumb">
+      <div class="ex-fields">
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1"><span class="ex-label">Nome</span>
+            <input class="inline" value="${esc(ex.name)}" oninput="exercises[${i}].name=this.value">
+          </div>
+          <button class="remove-btn" onclick="removeEx(${i})">×</button>
+        </div>
+        <div class="ex-row">
+          <div class="field-group"><span class="ex-label">Músculo</span>
+            <select class="inline" onchange="exercises[${i}].muscle=this.value">
+              ${MUSCLES.map(m=>`<option value="${m}"${m===ex.muscle?' selected':''}>${m}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field-group" style="max-width:60px"><span class="ex-label">Séries</span>
+            <input class="inline" type="number" value="${ex.sets}" min="1" max="10" oninput="exercises[${i}].sets=parseInt(this.value)||3">
+          </div>
+          <div class="field-group" style="max-width:70px"><span class="ex-label">Reps</span>
+            <input class="inline" value="${esc(ex.reps)}" oninput="exercises[${i}].reps=this.value">
+          </div>
+          <div class="field-group" style="max-width:78px"><span class="ex-label">Descanso(s)</span>
+            <input class="inline" type="number" value="${ex.rest}" min="10" oninput="exercises[${i}].rest=parseInt(this.value)||60">
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span class="ex-label" style="margin-bottom:0">Instrução de execução</span>
+            <button class="btn-ai" id="genbtn-${i}" onclick="generateOne(${i})" ${ex.aiStatus==='loading'?'disabled':''}>✨ Gerar com IA</button>
+          </div>
+          ${tag}
+          <textarea class="inline" id="instr-${i}" oninput="exercises[${i}].instruction=this.value" placeholder="Clique em ✨ Gerar com IA ou escreva aqui...">${esc(ex.instruction)}</textarea>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function removeEx(i) { exercises.splice(i,1); renderList(); }
+
+function clearAll() {
+  if (!confirm('Limpar tudo?')) return;
+  exercises = [];
+  renderList();
+  document.getElementById('review-card').style.display='none';
+  document.getElementById('status-bar').style.display='none';
+}
+
+// ─── IA: GERAÇÃO DE DESCRIÇÃO ─────────────────────────────────────────────────
+async function fetchDescription(name) {
+  const prompt = `Você é um personal trainer brasileiro especialista em calistenia. Gere uma instrução de execução para o exercício: "${name}".
+
+Use EXATAMENTE este formato (sem markdown, sem asteriscos, sem traços):
+
+Preparação
+[1-2 frases sobre a posição inicial]
+
+Execução
+[2-4 frases descrevendo o movimento passo a passo]
+
+Dicas
+[1-2 dicas práticas e objetivas com nomes dos músculos trabalhados]
+
+Seja direto, linguagem simples e brasileira. Máximo 130 palavras.`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 400,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{ role:'user', content: prompt }]
+    })
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Erro na API');
+
+  return data.content
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('\n')
     .trim();
 }
 
-// ─── RENDER TABLE ─────────────────────────────────────────────────────────────
-const MUSCLES = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
+async function generateOne(i) {
+  exercises[i].aiStatus = 'loading';
+  renderList();
+  try {
+    exercises[i].instruction = await fetchDescription(exercises[i].name);
+    exercises[i].aiStatus = 'done';
+  } catch(e) {
+    exercises[i].aiStatus = 'error';
+    console.error(e);
+  }
+  renderList();
+}
 
-function renderTable() {
-  const card = document.getElementById('review-card');
-  const wrap = document.getElementById('table-wrap');
-  const badge = document.getElementById('count-badge');
+async function generateAll() {
+  const btn = document.getElementById('gen-all-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Gerando...';
 
-  if (!exercises.length) {
-    card.style.display = 'none';
-    return;
+  const toGenerate = exercises.map((_,i)=>i).filter(i => exercises[i].aiStatus !== 'done');
+  const CONCURRENCY = 3;
+
+  for (let s = 0; s < toGenerate.length; s += CONCURRENCY) {
+    const batch = toGenerate.slice(s, s + CONCURRENCY);
+    batch.forEach(i => { exercises[i].aiStatus = 'loading'; });
+    renderList();
+    await Promise.all(batch.map(async i => {
+      try {
+        exercises[i].instruction = await fetchDescription(exercises[i].name);
+        exercises[i].aiStatus = 'done';
+      } catch(e) {
+        exercises[i].aiStatus = 'error';
+      }
+      renderList();
+    }));
   }
 
-  card.style.display = 'block';
-  badge.textContent = `${exercises.length} exercício(s)`;
-
-  const muscleOpts = MUSCLES.map(m => `<option value="${m}">${m}</option>`).join('');
-
-  let rows = exercises.map((ex, i) => `
-    <tr id="row-${i}">
-      <td><img src="${ex.preview}" class="thumb" alt=""></td>
-      <td><input class="inline" value="${ex.name}" oninput="exercises[${i}].name=this.value" style="min-width:160px"></td>
-      <td>
-        <select class="inline" onchange="exercises[${i}].muscle=this.value">
-          ${MUSCLES.map(m => `<option value="${m}"${m===ex.muscle?' selected':''}>${m}</option>`).join('')}
-        </select>
-      </td>
-      <td><input class="inline" type="number" value="${ex.sets}" min="1" max="10" oninput="exercises[${i}].sets=parseInt(this.value)||3" style="width:54px"></td>
-      <td><input class="inline" value="${ex.reps}" oninput="exercises[${i}].reps=this.value" style="width:70px" placeholder="10"></td>
-      <td><input class="inline" type="number" value="${ex.rest}" min="10" oninput="exercises[${i}].rest=parseInt(this.value)||60" style="width:64px"></td>
-      <td><button class="remove-btn" onclick="removeEx(${i})">×</button></td>
-    </tr>
-  `).join('');
-
-  wrap.innerHTML = `
-    <table class="ex-table">
-      <thead>
-        <tr>
-          <th>GIF</th>
-          <th>Nome do exercício</th>
-          <th>Músculo</th>
-          <th>Séries</th>
-          <th>Reps</th>
-          <th>Descanso (s)</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
+  btn.disabled = false;
+  btn.innerHTML = '✨ Gerar TODAS as descrições com IA';
 }
 
-function removeEx(i) {
-  exercises.splice(i, 1);
-  renderTable();
-}
-
-function clearAll() {
-  if (!confirm('Limpar todos os exercícios da lista?')) return;
-  exercises = [];
-  renderTable();
-  document.getElementById('review-card').style.display = 'none';
-  document.getElementById('status-bar').style.display = 'none';
-}
-
-// ─── IMPORT ───────────────────────────────────────────────────────────────────
+// ─── FIREBASE IMPORT ──────────────────────────────────────────────────────────
 async function saveGifToFirestore(exerciseId, base64, index) {
   const size = base64.length;
-  if (size <= CHUNK_SIZE) {
-    return { mode: 'inline', data: base64 };
-  }
+  if (size <= CHUNK_SIZE) return { mode:'inline', data:base64 };
   const totalChunks = Math.ceil(size / CHUNK_SIZE);
   const batch = db.batch();
   for (let i = 0; i < totalChunks; i++) {
     const ref = db.collection('exercise_gifs').doc(`${exerciseId}_gif${index}_chunk${i}`);
-    batch.set(ref, {
-      exerciseId, gifIndex: index, chunkIndex: i, totalChunks,
-      data: base64.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
-    });
+    batch.set(ref, { exerciseId, gifIndex:index, chunkIndex:i, totalChunks, data:base64.substring(i*CHUNK_SIZE,(i+1)*CHUNK_SIZE) });
   }
   await batch.commit();
-  return { mode: 'chunked', totalChunks };
+  return { mode:'chunked', totalChunks };
 }
 
-function log(msg, type = '') {
+function log(msg, type='') {
   const el = document.getElementById('log');
   el.innerHTML += `<div class="${type}">${msg}</div>`;
   el.scrollTop = el.scrollHeight;
@@ -245,11 +305,9 @@ function log(msg, type = '') {
 
 async function startImport() {
   if (!exercises.length) { alert('Nenhum exercício para importar.'); return; }
-
   const btn = document.getElementById('import-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Importando...';
-
   const sb = document.getElementById('status-bar');
   sb.style.display = 'block';
   document.getElementById('status-title').textContent = `Importando ${exercises.length} exercício(s)...`;
@@ -262,50 +320,28 @@ async function startImport() {
     const ex = exercises[i];
     try {
       log(`<span class="info">⏳ [${i+1}/${total}] ${ex.name}...</span>`);
-
-      // 1. cria o documento do exercício
       const ref = await db.collection('exercises').add({
-        name: ex.name,
-        muscle: ex.muscle,
-        sets: ex.sets,
-        reps: ex.reps,
-        rest: ex.rest,
-        instruction: '',
-        gifs: [],
+        name:ex.name, muscle:ex.muscle, sets:ex.sets, reps:ex.reps, rest:ex.rest,
+        instruction: ex.instruction||'', gifs:[],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-
-      // 2. salva o gif
       const result = await saveGifToFirestore(ref.id, ex.base64, 0);
-      const gifsData = [result.mode === 'inline'
-        ? { mode: 'inline', data: result.data }
-        : { mode: 'chunked', totalChunks: result.totalChunks }];
-
-      // 3. atualiza o doc com o gif
+      const gifsData = [result.mode==='inline' ? {mode:'inline',data:result.data} : {mode:'chunked',totalChunks:result.totalChunks}];
       await ref.update({ gifs: gifsData });
-
       done++;
-      log(`<span class="ok">✅ ${ex.name} salvo (${result.mode === 'chunked' ? result.totalChunks+' chunks' : 'inline'})</span>`);
-    } catch (e) {
+      log(`<span class="ok">✅ ${ex.name} — ${ex.instruction ? '📝 com descrição' : 'sem descrição'}</span>`);
+    } catch(e) {
       log(`<span class="err">❌ Erro em "${ex.name}": ${e.message}</span>`);
     }
-
-    // atualiza progresso
-    const pct = Math.round(((i + 1) / total) * 100);
-    document.getElementById('progress-fill').style.width = pct + '%';
-    document.getElementById('status-count').textContent = `${i + 1} / ${total}`;
+    document.getElementById('progress-fill').style.width = Math.round(((i+1)/total)*100)+'%';
+    document.getElementById('status-count').textContent = `${i+1} / ${total}`;
   }
 
-  document.getElementById('status-title').textContent = `✅ Concluído! ${done}/${total} exercícios importados.`;
-  log(`<span class="ok">━━ Importação finalizada: ${done} ok, ${total - done} erro(s) ━━</span>`);
-
-  btn.innerHTML = '✅ Importação concluída!';
+  document.getElementById('status-title').textContent = `✅ Concluído! ${done}/${total} importados.`;
+  log(`<span class="ok">━━ ${done} ok · ${total-done} erro(s) ━━</span>`);
+  btn.innerHTML = '✅ Concluído!';
   btn.style.background = '#166534';
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.innerHTML = '⬆ Importar tudo para o Firebase';
-    btn.style.background = '';
-  }, 5000);
+  setTimeout(() => { btn.disabled=false; btn.innerHTML='⬆ Importar tudo para o Firebase'; btn.style.background=''; }, 5000);
 }
 </script>
 </body>
