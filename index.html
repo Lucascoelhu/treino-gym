@@ -131,10 +131,19 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
 
 /* AVATAR GRID */
 .avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
-.avatar-opt{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:all .2s}
-.avatar-opt:hover{border-color:#e85d04;transform:scale(1.08)}
-.avatar-opt.selected{border-color:#e85d04;box-shadow:0 0 0 3px rgba(232,93,4,.35)}
+.avatar-opt{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:all .2s;background:#1a1a1a}
+.avatar-opt:hover{border-color:#e85d04;transform:scale(1.1)}
+.avatar-opt.selected{border-color:#e85d04;box-shadow:0 0 0 3px rgba(232,93,4,.4);transform:scale(1.05)}
 .avatar-section-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:4px}
+/* AVATAR TABS */
+.avatar-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.avatar-tabs::-webkit-scrollbar{display:none}
+.avatar-tab-btn{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1px solid #333;background:#1a1a1a;color:#888;font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.avatar-tab-btn.active{background:#e85d04;border-color:#e85d04;color:#fff;font-weight:600}
+/* SPINNER para SVG carregando */
+.avatar-opt{position:relative}
+@keyframes avatarPop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+.avatar-opt{animation:avatarPop .2s ease}
 
 /* PROFILE */
 .avatar{cursor:pointer;transition:opacity .15s}
@@ -295,18 +304,110 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 
-const DEFAULT_AVATARS = [
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=coelho&backgroundColor=e85d04',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=lobo&backgroundColor=7c3aed',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=tigre&backgroundColor=0891b2',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=urso&backgroundColor=059669',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=aguia&backgroundColor=dc2626',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=leao&backgroundColor=d97706',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=pantera&backgroundColor=4f46e5',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=falcao&backgroundColor=0d9488',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=touro&backgroundColor=be123c',
-  'https://api.dicebear.com/9.x/adventurer/svg?seed=raposa&backgroundColor=ea580c',
+const AVATAR_CATEGORIES = [
+  {
+    label: '😎 Estilo',
+    avatars: [
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym1&backgroundColor=e85d04',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym2&backgroundColor=7c3aed',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym3&backgroundColor=0891b2',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym4&backgroundColor=059669',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym5&backgroundColor=dc2626',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym6&backgroundColor=d97706',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym7&backgroundColor=4f46e5',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym8&backgroundColor=0d9488',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym9&backgroundColor=be123c',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=gym10&backgroundColor=ea580c',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=force&backgroundColor=6d28d9',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=iron&backgroundColor=166534',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=muscle&backgroundColor=1e40af',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=beast&backgroundColor=9f1239',
+      'https://api.dicebear.com/9.x/adventurer/svg?seed=champ&backgroundColor=92400e',
+    ]
+  },
+  {
+    label: '🎮 Pixel',
+    avatars: [
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px1&backgroundColor=e85d04',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px2&backgroundColor=7c3aed',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px3&backgroundColor=0891b2',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px4&backgroundColor=059669',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px5&backgroundColor=dc2626',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px6&backgroundColor=d97706',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px7&backgroundColor=4f46e5',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px8&backgroundColor=0d9488',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px9&backgroundColor=be123c',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px10&backgroundColor=92400e',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px11&backgroundColor=6d28d9',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px12&backgroundColor=166534',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px13&backgroundColor=1e40af',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px14&backgroundColor=9f1239',
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=px15&backgroundColor=0c4a6e',
+    ]
+  },
+  {
+    label: '🤖 Robôs',
+    avatars: [
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot1&backgroundColor=e85d04',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot2&backgroundColor=7c3aed',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot3&backgroundColor=0891b2',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot4&backgroundColor=059669',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot5&backgroundColor=dc2626',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot6&backgroundColor=d97706',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot7&backgroundColor=4f46e5',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot8&backgroundColor=0d9488',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot9&backgroundColor=be123c',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot10&backgroundColor=92400e',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot11&backgroundColor=6d28d9',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot12&backgroundColor=166534',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot13&backgroundColor=1e40af',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot14&backgroundColor=9f1239',
+      'https://api.dicebear.com/9.x/bottts/svg?seed=bot15&backgroundColor=0c4a6e',
+    ]
+  },
+  {
+    label: '🐾 Animais',
+    avatars: [
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an1',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an2',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an3',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an4',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an5',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an6',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an7',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an8',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an9',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an10',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an11',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an12',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an13',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an14',
+      'https://api.dicebear.com/9.x/fun-emoji/svg?seed=an15',
+    ]
+  },
+  {
+    label: '✨ Anéis',
+    avatars: [
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn1',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn2',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn3',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn4',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn5',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn6',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn7',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn8',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn9',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn10',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn11',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn12',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn13',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn14',
+      'https://api.dicebear.com/9.x/rings/svg?seed=rn15',
+    ]
+  },
 ];
+// flat list para compatibilidade com setAvatarDisplay
+const DEFAULT_AVATARS = AVATAR_CATEGORIES.flatMap(c => c.avatars);
 
 const LOGO_B64 = "https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png";
 const ADMIN_EMAIL = "lukcoelhu@hotmail.com";
@@ -994,14 +1095,28 @@ function setAvatarDisplay(el, name, photoBase64) {
 
 let pendingProfilePhoto = null;
 
+let _avatarActiveCat = 0;
 function renderAvatarGrid(gridId, currentPhoto) {
-  const grid = document.getElementById(gridId);
-  if (!grid) return;
-  grid.innerHTML = DEFAULT_AVATARS.map((url, i) =>
-    `<img src="${url}" class="avatar-opt${currentPhoto===url?' selected':''}" 
-     onclick="selectDefaultAvatar('${url}','${gridId}')" 
-     onerror="this.style.display='none'">`
+  const wrap = document.getElementById(gridId);
+  if (!wrap) return;
+  // tabs
+  const tabsHtml = AVATAR_CATEGORIES.map((c, i) =>
+    `<button class="avatar-tab-btn${i===_avatarActiveCat?' active':''}" onclick="switchAvatarCat(${i},'${gridId}','${currentPhoto||''}')">${c.label}</button>`
   ).join('');
+  // grid da categoria ativa
+  const avatars = AVATAR_CATEGORIES[_avatarActiveCat].avatars;
+  const gridHtml = avatars.map(url =>
+    `<img src="${url}" class="avatar-opt${currentPhoto===url?' selected':''}"
+     onclick="selectDefaultAvatar('${url}','${gridId}')"
+     onerror="this.style.display='none'"
+     loading="lazy">`
+  ).join('');
+  wrap.innerHTML = `<div class="avatar-tabs">${tabsHtml}</div><div class="avatar-grid" id="${gridId}-inner">${gridHtml}</div>`;
+}
+
+function switchAvatarCat(idx, gridId, currentPhoto) {
+  _avatarActiveCat = idx;
+  renderAvatarGrid(gridId, currentPhoto);
 }
 
 function selectDefaultAvatar(url, gridId) {
@@ -1022,6 +1137,7 @@ function openProfileModal() {
   const bigAvatar = document.getElementById('profile-avatar-big');
   setAvatarDisplay(bigAvatar, name, currentUserData.photoBase64||null);
   document.getElementById('profile-msg').className = 'msg';
+  _avatarActiveCat = 0;
   renderAvatarGrid('profile-avatar-grid', currentUserData.photoBase64||null);
   document.getElementById('modal-profile').style.display = 'flex';
 }
@@ -1363,7 +1479,7 @@ function closeGifModal(e) {
     </div>
     <div style="text-align:center;font-size:12px;color:#888;margin-bottom:14px">Toque para enviar sua própria foto</div>
     <div class="avatar-section-label">Ou escolha um avatar</div>
-    <div class="avatar-grid" id="profile-avatar-grid"></div>
+    <div id="profile-avatar-grid"></div>
     <div class="field">
       <label>Nome</label>
       <input type="text" id="profile-name-input" placeholder="Como quer ser chamado?">
