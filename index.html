@@ -1147,6 +1147,32 @@ function openProfileModal() {
   document.getElementById('profile-msg').className = 'msg';
   _avatarActiveCat = 0;
   renderAvatarGrid('profile-avatar-grid', currentUserData.photoBase64||null);
+  // expiração
+  const box = document.getElementById('profile-expiry-box');
+  const exp = currentUserData.accessExpiresAt;
+  if (exp) {
+    const expDate = exp.toDate ? exp.toDate() : new Date(exp);
+    const diff = Math.ceil((expDate - new Date()) / (1000*60*60*24));
+    const expired = diff < 0;
+    const dateStr = expDate.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
+    let icon, bg, color, label;
+    if (expired) {
+      icon='🔒'; bg='#3d0000'; color='#f87171'; label='Acesso expirado';
+    } else if (diff <= 5) {
+      icon='⚠️'; bg='#3d1a00'; color='#fb923c'; label=`Expira em ${diff} dia${diff!==1?'s':''}`;
+    } else {
+      icon='✅'; bg='#0d2c19'; color='#4ade80'; label=`Ativo por mais ${diff} dias`;
+    }
+    box.style.background = bg;
+    box.style.display = 'flex';
+    box.innerHTML = `<span style="font-size:22px">${icon}</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.06em">${label}</div>
+        <div style="font-size:12px;color:#888;margin-top:2px">Vence em ${dateStr}</div>
+      </div>`;
+  } else {
+    box.style.display = 'none';
+  }
   document.getElementById('modal-profile').style.display = 'flex';
 }
 
@@ -1501,6 +1527,7 @@ function closeGifModal(e) {
     <div style="text-align:center;font-size:12px;color:#888;margin-bottom:14px">Toque para enviar sua própria foto</div>
     <div class="avatar-section-label">Ou escolha um avatar</div>
     <div id="profile-avatar-grid"></div>
+    <div id="profile-expiry-box" style="border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px"></div>
     <div class="field">
       <label>Nome</label>
       <input type="text" id="profile-name-input" placeholder="Como quer ser chamado?">
