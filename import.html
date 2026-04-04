@@ -155,7 +155,7 @@ function renderList() {
     const tag = ex.aiStatus==='loading'
       ? `<span class="ai-tag loading"><span class="spinner-sm"></span> Gerando...</span>`
       : ex.aiStatus==='done' ? `<span class="ai-tag done">✅ Gerado pela IA</span>`
-      : ex.aiStatus==='error' ? `<span class="ai-tag error">⚠ Falha — edite manualmente</span>` : '';
+      : ex.aiStatus==='error' ? `<span class="ai-tag error">⚠ ${esc(ex.aiError||'Erro desconhecido')}</span>` : '';
 
     return `<div class="ex-card" id="excard-${i}">
       <img src="${ex.preview}" class="ex-thumb">
@@ -224,11 +224,10 @@ Seja direto, linguagem simples e brasileira. Máximo 130 palavras.`;
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 400,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages: [{ role:'user', content: prompt }]
     })
   });
@@ -245,12 +244,14 @@ Seja direto, linguagem simples e brasileira. Máximo 130 palavras.`;
 
 async function generateOne(i) {
   exercises[i].aiStatus = 'loading';
+  exercises[i].aiError = '';
   renderList();
   try {
     exercises[i].instruction = await fetchDescription(exercises[i].name);
     exercises[i].aiStatus = 'done';
   } catch(e) {
     exercises[i].aiStatus = 'error';
+    exercises[i].aiError = e.message;
     console.error(e);
   }
   renderList();
