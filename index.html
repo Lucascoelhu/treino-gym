@@ -1090,7 +1090,7 @@ function renderClientWeek(template) {
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:600;color:${hasEx?'#fff':'#555'}">${w.label||(hasEx?'Treino':'Descanso')}</div>
-          <div style="font-size:12px;color:#666;margin-top:2px">${daysFullPT[i]}${count?' · '+count+' exercício'+(count>1?'s':'')':''}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px">${daysFullPT[i]}${count ? (' · ' + count + (count>1 ? ' exercícios' : ' exercício')) : ''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           ${isToday?'<span style="background:#e85d04;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">HOJE</span>':''}
