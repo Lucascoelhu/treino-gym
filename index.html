@@ -127,6 +127,16 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
 .instruction-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:16px;margin-bottom:12px}
 .instruction-title{font-size:13px;font-weight:700;color:#e85d04;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
 .instruction-text{font-size:14px;color:#ccc;line-height:1.6;white-space:pre-wrap}
+
+/* PROFILE */
+.avatar{cursor:pointer;transition:opacity .15s}
+.avatar:hover{opacity:.8}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.profile-pic-wrap{position:relative;width:80px;height:80px;margin:0 auto 16px;cursor:pointer}
+.profile-pic-wrap .avatar{width:80px;height:80px;font-size:22px}
+.profile-pic-wrap .edit-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:20px}
+.profile-pic-wrap:hover .edit-overlay{opacity:1}
+.profile-pic-wrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;border-radius:50%}
 </style>
 </head>
 <body>
@@ -207,7 +217,7 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
     <div class="topbar-title">CoelhoTreino</div>
     <div class="topbar-right">
       <span id="client-name-top" style="font-size:13px;color:#888"></span>
-      <div class="avatar" id="client-avatar">?</div>
+      <div class="avatar" id="client-avatar" onclick="openProfileModal()" title="Editar perfil">?</div>
       <button class="btn-sm btn-secondary" onclick="logout()">Sair</button>
     </div>
   </div>
@@ -577,6 +587,10 @@ async function loadAdminData() {
   usersSnap.docs.forEach(d => {
     const u = d.data();
     const initials = (u.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const avatarInner = u.photoBase64
+      ? `<img src="${u.photoBase64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : initials;
+    const avatarBg = u.photoBase64 ? 'transparent' : '#e85d04';
     let accessLabel = '', accessColor = '', accessBg = '';
     if (u.accessExpiresAt) {
       const exp = u.accessExpiresAt.toDate ? u.accessExpiresAt.toDate() : new Date(u.accessExpiresAt);
@@ -589,7 +603,7 @@ async function loadAdminData() {
     }
     html += `<div class="client-card">
       <div class="flex-between">
-        <div class="flex"><div class="avatar">${initials}</div>
+        <div class="flex"><div class="avatar" style="background:${avatarBg}">${avatarInner}</div>
           <div><div style="font-weight:600">${u.name}</div><div class="client-code mt8">${u.code}</div></div>
         </div>
         <button class="btn-sm btn-primary" onclick="openAssignWorkout('${d.id}','${u.name}')">Treino</button>
@@ -940,12 +954,74 @@ async function saveAssignTemplate() {
   alert('Treino salvo!');
 }
 
+// ─── PROFILE ──────────────────────────────────────────────────────────────────
+
+function setAvatarDisplay(el, name, photoBase64) {
+  if (photoBase64) {
+    el.innerHTML = `<img src="${photoBase64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    el.style.background = 'transparent';
+  } else {
+    const initials = (name||'?').split(' ').filter(Boolean).map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    el.textContent = initials || '?';
+    el.style.background = '#e85d04';
+  }
+}
+
+let pendingProfilePhoto = null;
+
+function openProfileModal() {
+  const name = currentUserData.name||'';
+  document.getElementById('profile-name-input').value = name;
+  pendingProfilePhoto = null;
+  const bigAvatar = document.getElementById('profile-avatar-big');
+  setAvatarDisplay(bigAvatar, name, currentUserData.photoBase64||null);
+  document.getElementById('profile-msg').className = 'msg';
+  document.getElementById('modal-profile').style.display = 'flex';
+}
+
+function handleProfilePicUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { alert('Foto muito grande. Máximo 2MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingProfilePhoto = ev.target.result;
+    const bigAvatar = document.getElementById('profile-avatar-big');
+    bigAvatar.innerHTML = `<img src="${pendingProfilePhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    bigAvatar.style.background = 'transparent';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveProfile() {
+  const name = document.getElementById('profile-name-input').value.trim();
+  const msg = document.getElementById('profile-msg');
+  if (!name) { showMsg(msg, 'Digite seu nome', 'error'); return; }
+  const btn = document.getElementById('profile-save-btn');
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+  btn.disabled = true;
+  try {
+    const update = { name };
+    if (pendingProfilePhoto) update.photoBase64 = pendingProfilePhoto;
+    await db.collection('users').doc(currentUser.uid).update(update);
+    currentUserData.name = name;
+    if (pendingProfilePhoto) currentUserData.photoBase64 = pendingProfilePhoto;
+    // atualiza topbar
+    document.getElementById('client-name-top').textContent = name.split(' ')[0];
+    setAvatarDisplay(document.getElementById('client-avatar'), name, currentUserData.photoBase64||null);
+    showMsg(msg, 'Perfil salvo!', 'success');
+    pendingProfilePhoto = null;
+  } catch(e) { showMsg(msg, 'Erro: '+e.message, 'error'); }
+  btn.textContent = 'Salvar';
+  btn.disabled = false;
+}
+
 // ─── CLIENT ───────────────────────────────────────────────────────────────────
 
 async function loadClientData() {
   const name = currentUserData.name||'';
   document.getElementById('client-name-top').textContent = name.split(' ')[0];
-  document.getElementById('client-avatar').textContent = name.substring(0,2).toUpperCase();
+  setAvatarDisplay(document.getElementById('client-avatar'), name, currentUserData.photoBase64||null);
 
   const template = currentUserData.weeklyTemplate||{};
   const today = new Date();
@@ -1226,6 +1302,29 @@ function closeGifModal(e) {
   }
 }
 </script>
+<!-- MODAL PERFIL -->
+<div id="modal-profile" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="modal-title" style="margin-bottom:0">Meu Perfil</div>
+      <button onclick="closeModal('modal-profile')" style="background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;padding:0">×</button>
+    </div>
+    <div class="profile-pic-wrap">
+      <div class="avatar" id="profile-avatar-big"></div>
+      <div class="edit-overlay">📷</div>
+      <input type="file" accept="image/*" onchange="handleProfilePicUpload(event)">
+    </div>
+    <div style="text-align:center;font-size:12px;color:#555;margin-bottom:20px">Toque na foto para alterar</div>
+    <div class="field">
+      <label>Nome</label>
+      <input type="text" id="profile-name-input" placeholder="Como quer ser chamado?">
+    </div>
+    <div id="profile-msg" class="msg"></div>
+    <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfile()">Salvar</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="logout()">Sair da conta</button>
+  </div>
+</div>
+
 <!-- GIF DETAIL MODAL -->
 <div id="gif-detail-modal" class="gif-modal-overlay" style="display:none" onclick="closeGifModal(event)">
   <div class="gif-modal-inner">
