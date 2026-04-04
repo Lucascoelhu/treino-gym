@@ -74,13 +74,15 @@ textarea.inline:focus{border-color:#e85d04}
 .login-wall{position:fixed;inset:0;background:#0f0f0f;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:28px;width:100%;max-width:360px}
 .login-card h2{font-size:18px;font-weight:700;margin-bottom:20px}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.field input{width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:15px;outline:none}
-.field input:focus{border-color:#e85d04}
+.lfield{margin-bottom:14px}
+.lfield label{display:block;font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.lfield input{width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:15px;outline:none}
+.lfield input:focus{border-color:#e85d04}
 .btn-login{width:100%;padding:12px;background:#e85d04;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
 .btn-login:hover{background:#d14e00}
 .login-err{font-size:13px;color:#f87171;margin-bottom:12px;display:none}
+.flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 </style>
 </head>
 <body>
@@ -90,13 +92,13 @@ textarea.inline:focus{border-color:#e85d04}
   <div class="login-card">
     <h2>🔒 Acesso Admin</h2>
     <div id="login-err" class="login-err"></div>
-    <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
-    <div class="field"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lfield"><label>Email</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
+    <div class="lfield"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-login" onclick="doLogin()">Entrar</button>
   </div>
 </div>
 
-
+<h1>🤸 Importar Calistenia em Lote</h1>
 <p class="sub">Carregue os GIFs, gere as descrições com Gemini e importe tudo de uma vez.</p>
 
 <!-- UPLOAD -->
@@ -160,7 +162,6 @@ const db = firebase.firestore();
 
 const ADMIN_EMAIL = "lukcoelhu@hotmail.com";
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(user => {
   if (user && user.email === ADMIN_EMAIL) {
     document.getElementById('login-wall').style.display = 'none';
@@ -183,7 +184,6 @@ async function doLogin() {
     err.style.display = 'block';
   }
 }
-
 const CHUNK_SIZE = 700000;
 const MUSCLES = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
 const TEMPLATE = `Preparação\n\nExecução\n\nDicas\n`;
@@ -377,16 +377,26 @@ async function generateAll() {
 }
 
 // ─── FIREBASE ─────────────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 async function saveGifToFirestore(exerciseId, base64, index) {
   const size = base64.length;
   if (size <= CHUNK_SIZE) return { mode: 'inline', data: base64 };
+
   const totalChunks = Math.ceil(size / CHUNK_SIZE);
-  const batch = db.batch();
-  for (let i = 0; i < totalChunks; i++) {
-    const ref = db.collection('exercise_gifs').doc(`${exerciseId}_gif${index}_chunk${i}`);
-    batch.set(ref, { exerciseId, gifIndex: index, chunkIndex: i, totalChunks, data: base64.substring(i*CHUNK_SIZE, (i+1)*CHUNK_SIZE) });
+  const BATCH_LIMIT = 400; // margem segura abaixo do limite de 500 do Firestore
+
+  for (let start = 0; start < totalChunks; start += BATCH_LIMIT) {
+    const batchOp = db.batch();
+    const end = Math.min(start + BATCH_LIMIT, totalChunks);
+    for (let i = start; i < end; i++) {
+      const ref = db.collection('exercise_gifs').doc(`${exerciseId}_gif${index}_chunk${i}`);
+      batchOp.set(ref, { exerciseId, gifIndex: index, chunkIndex: i, totalChunks, data: base64.substring(i*CHUNK_SIZE, (i+1)*CHUNK_SIZE) });
+    }
+    await batchOp.commit();
+    if (end < totalChunks) await sleep(300);
   }
-  await batch.commit();
+
   return { mode: 'chunked', totalChunks };
 }
 
@@ -425,6 +435,7 @@ async function startImport() {
       await ref.update({ gifs: gifsData });
       done++;
       log(`<span class="ok">✅ ${ex.name}${ex.instruction ? ' — com descrição' : ''}</span>`);
+      await sleep(500); // pausa entre exercícios para não saturar o Firestore
     } catch(e) {
       log(`<span class="err">❌ Erro em "${ex.name}": ${e.message}</span>`);
     }
