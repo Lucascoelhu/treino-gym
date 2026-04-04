@@ -1583,10 +1583,11 @@ function closeGifModal(e) {
 <!-- GIF DETAIL MODAL -->
 <div id="gif-detail-modal" class="gif-modal-overlay" style="display:none" onclick="closeGifModal(event)">
   <div class="gif-modal-inner">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div style="font-size:18px;font-weight:700" id="gif-modal-exname"></div>
       <button class="gif-modal-close" onclick="document.getElementById('gif-detail-modal').style.display='none'">×</button>
     </div>
+    <div id="gif-modal-detail" style="font-size:13px;color:#888;margin-bottom:14px"></div>
     <img id="gif-modal-img" class="gif-modal-img" src="">
     <div class="gif-nav">
       <button class="gif-nav-btn" id="gif-nav-prev" onclick="gifModalNav(-1)">&#8249; Anterior</button>
@@ -1595,4 +1596,8 @@ function closeGifModal(e) {
     </div>
     <div class="gif-modal-dots" id="gif-modal-dots"></div>
     <div class="instruction-box" id="gif-modal-instruction" style="display:none">
-      <div class="instruction-title">&#128
+      <div class="instruction-title">📋 Execução</div>
+      <div class="instruction-text" id="gif-modal-instruction-text"></div>
+    </div>
+  </div>
+</div>
