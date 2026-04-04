@@ -218,7 +218,7 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
   </div>
   <div id="client-hoje" class="content"></div>
   <div id="client-historico" class="content" style="display:none"></div>
-  <div id="client-semana" class="content" style="display:none"></div>
+  <div id="client-semana" class="content" style="display:none;padding:12px"></div>
 </div>
 
 <!-- MODAL EXERCISE -->
@@ -1072,25 +1072,31 @@ async function loadClientHistory() {
 
 function renderClientWeek(template) {
   const el = document.getElementById('client-semana');
-  const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'], keys=['mon','tue','wed','thu','fri','sat','sun'];
+  const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const daysFullPT=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  const keys=['mon','tue','wed','thu','fri','sat','sun'];
   const todayKey=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-  let html='<div class="section-title">Semana</div>';
+  let html='';
   keys.forEach((key,i)=>{
     const w=template[key]||{}, count=(w.exercises||[]).length, isToday=key===todayKey;
     const hasEx = count > 0;
-    html+=`<div class="card${isToday?'" style="border-color:#e85d04':''}">
-      <div class="flex-between" style="${hasEx?'cursor:pointer':''}" onclick="${hasEx?`toggleWeekDay('${key}')`:''}">
-        <div class="flex" style="gap:10px">
-          <div class="day-circle" style="width:36px;height:36px;font-size:12px;${isToday?'':'background:#333'}">${days[i]}</div>
-          <div><div style="font-size:14px;font-weight:600">${w.label||'Descanso'}</div>
-          <div style="font-size:12px;color:#888">${count?count+' exercício(s)':'Off'}</div></div>
+    const borderStyle = isToday ? 'border-left:3px solid #e85d04;' : 'border-left:3px solid transparent;';
+    const bgStyle = isToday ? 'background:#1f1400;' : '';
+    html+=`<div style="border-radius:14px;padding:14px 16px;margin-bottom:8px;background:#1a1a1a;border:1px solid ${isToday?'#e85d04':'#222'};${borderStyle}${bgStyle}transition:border-color .2s;${hasEx?'cursor:pointer':''};" onclick="${hasEx?`toggleWeekDay('${key}')`:''}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:12px;background:${isToday?'#e85d04':'#2a2a2a'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+          <div style="font-size:11px;font-weight:700;color:${isToday?'#fff':'#888'};line-height:1">${days[i]}</div>
         </div>
-        <div class="flex" style="gap:8px">
-          ${isToday?'<span class="tag tag-orange">Hoje</span>':''}
-          ${hasEx?`<span id="week-arrow-${key}" style="color:#888;font-size:18px;transition:transform .2s">›</span>`:''}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:600;color:${hasEx?'#fff':'#555'}">${w.label||(hasEx?'Treino':'Descanso')}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px">${daysFullPT[i]}${count?' · '+count+' exercício'+(count>1?'s':'')':''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          ${isToday?'<span style="background:#e85d04;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">HOJE</span>':''}
+          ${hasEx?`<span id="week-arrow-${key}" style="color:#555;font-size:20px;line-height:1;transition:transform .25s;display:inline-block">›</span>`:'<span style="font-size:16px">😴</span>'}
         </div>
       </div>
-      <div id="week-detail-${key}" style="display:none;margin-top:12px;border-top:1px solid #2a2a2a;padding-top:12px"></div>
+      <div id="week-detail-${key}" style="display:none;margin-top:14px;border-top:1px solid #2a2a2a;padding-top:12px"></div>
     </div>`;
   });
   el.innerHTML=html;
@@ -1116,15 +1122,19 @@ async function toggleWeekDay(key) {
   const exDocs = await Promise.all(exIds.map(id=>db.collection('exercises').doc(id).get()));
   const exercises = exDocs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()}));
   let html = '';
-  exercises.forEach(ex => {
-    html += `<div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #1a1a1a">
-      <div id="wgif-${key}-${ex.id}" style="width:56px;height:56px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;overflow:hidden;position:relative" onclick="openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" title="Ver execução">
+  exercises.forEach((ex,idx2) => {
+    const isLast = idx2 === exercises.length-1;
+    html += `<div style="display:flex;gap:12px;align-items:center;padding:10px 0;${isLast?'':'border-bottom:1px solid #222'}">
+      <div id="wgif-${key}-${ex.id}" style="width:52px;height:52px;border-radius:10px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;overflow:hidden;position:relative" onclick="openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" title="Ver execução">
         ${MUSCLE_EMOJI[ex.muscle]||'💪'}
-        <div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px">👁</div>
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:18px" onmouseover="this.style.opacity=1;this.style.background='rgba(0,0,0,.5)'" onmouseout="this.style.opacity=0;this.style.background='rgba(0,0,0,0)'">👁</div>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:600">${ex.name}</div>
-        <div style="font-size:12px;color:#888">${ex.muscle} · ${ex.sets} séries · ${ex.reps} reps · ${ex.rest}s</div>
+        <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ex.name}</div>
+        <div style="font-size:11px;color:#666;margin-top:3px">${ex.sets} séries · ${ex.reps} reps · ${ex.rest}s descanso</div>
+      </div>
+      <div style="flex-shrink:0;text-align:right">
+        <div style="font-size:11px;color:#e85d04;background:#1f1000;padding:3px 8px;border-radius:6px">${ex.muscle}</div>
       </div>
     </div>`;
   });
