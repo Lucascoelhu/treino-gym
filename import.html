@@ -8,106 +8,120 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:100vh;padding:24px}
+body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:100vh;padding:24px;max-width:700px;margin:0 auto}
 h1{font-size:22px;font-weight:700;margin-bottom:4px}
-.sub{color:#888;font-size:14px;margin-bottom:28px}
+.sub{color:#888;font-size:14px;margin-bottom:24px}
 .card{background:#1a1a1a;border-radius:14px;padding:20px;margin-bottom:16px;border:1px solid #2a2a2a}
-.card-title{font-size:14px;font-weight:700;color:#e85d04;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:700;color:#e85d04;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+/* drop */
 .drop-zone{border:2px dashed #333;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#111}
 .drop-zone:hover,.drop-zone.dragover{border-color:#e85d04;background:#1a0a00}
 .drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drop-icon{font-size:36px;margin-bottom:8px}
 .drop-text{font-size:15px;font-weight:600;margin-bottom:4px}
 .drop-sub{font-size:12px;color:#555}
-.ex-card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:start;margin-bottom:12px}
-.ex-thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid #222}
-.ex-fields{display:flex;flex-direction:column;gap:8px}
-.ex-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+
+/* cards */
+.ex-card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:10px}
+.ex-top{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:start;margin-bottom:10px}
+.ex-thumb{width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid #222;display:block}
+.ex-row{display:flex;gap:8px;flex-wrap:wrap}
+.field-group{flex:1;min-width:70px}
 .ex-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;display:block}
 input.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;color:#fff;font-size:13px;outline:none;width:100%}
 input.inline:focus{border-color:#e85d04}
-select.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:6px 8px;color:#fff;font-size:13px;outline:none}
+select.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:6px 8px;color:#fff;font-size:13px;outline:none;width:100%}
 select.inline:focus{border-color:#e85d04}
-textarea.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;outline:none;width:100%;resize:vertical;min-height:80px;line-height:1.6;font-family:system-ui,sans-serif}
+textarea.inline{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px;color:#ccc;font-size:12px;outline:none;width:100%;resize:vertical;min-height:90px;line-height:1.65;font-family:system-ui,sans-serif}
 textarea.inline:focus{border-color:#e85d04}
-.field-group{flex:1;min-width:70px}
-.remove-btn{background:none;border:none;color:#444;font-size:22px;cursor:pointer;padding:0;line-height:1}
+.divider{height:1px;background:#1e1e1e;margin:10px 0}
+.remove-btn{background:none;border:none;color:#444;font-size:22px;cursor:pointer;padding:0;line-height:1;margin-top:2px}
 .remove-btn:hover{color:#ef4444}
-.ai-tag{font-size:11px;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;margin-top:2px}
-.ai-tag.loading{background:#1a0a00;color:#fb923c}
-.ai-tag.done{background:#0d2c19;color:#4ade80}
-.ai-tag.error{background:#3d0000;color:#f87171}
-.btn{padding:12px 20px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s}
+
+/* botões */
+.btn{padding:11px 20px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
 .btn-primary{background:#e85d04;color:#fff}
 .btn-primary:hover{background:#d14e00}
-.btn-primary:disabled{background:#5a2a00;color:#888;cursor:not-allowed}
-.btn-secondary{background:#222;color:#fff;border:1px solid #333}
-.btn-secondary:hover{background:#2a2a2a}
-.btn-ai{background:#2d1f5e;color:#c4b5fd;border:1px solid #4c3a8a;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
-.btn-ai:hover{background:#3b2878}
-.btn-ai:disabled{opacity:.4;cursor:not-allowed}
-.btn-ai-lg{padding:12px 20px;border-radius:8px;font-size:14px}
+.btn-primary:disabled{background:#5a2a00;color:#666;cursor:not-allowed}
+.btn-secondary{background:#222;color:#aaa;border:1px solid #333;font-size:13px;padding:8px 14px}
+.btn-secondary:hover{background:#2a2a2a;color:#fff}
+
+/* barra de status */
 .status-bar{background:#111;border-radius:10px;padding:16px;margin-top:16px;display:none}
 .status-title{font-size:13px;font-weight:700;margin-bottom:10px;color:#e85d04}
-.progress-wrap{background:#222;border-radius:4px;height:8px;overflow:hidden;margin-bottom:8px}
+.progress-wrap{background:#222;border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px}
 .progress-fill{height:100%;background:#e85d04;border-radius:4px;transition:width .3s}
-.log{max-height:220px;overflow-y:auto;font-size:12px;color:#888;line-height:1.8;font-family:monospace}
+.log{max-height:200px;overflow-y:auto;font-size:12px;color:#666;line-height:1.8;font-family:monospace}
 .log .ok{color:#4ade80}.log .err{color:#f87171}.log .info{color:#fb923c}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid #333;border-top-color:#e85d04;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
-.spinner-sm{display:inline-block;width:9px;height:9px;border:2px solid #555;border-top-color:#fb923c;border-radius:50%;animation:spin .6s linear infinite}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid #333;border-top-color:#e85d04;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.badge-orange{background:#3d1a00;color:#fb923c}
-.tip{background:#1a0a00;border:1px solid #3d1a00;border-radius:8px;padding:12px 14px;font-size:13px;color:#fb923c;margin-bottom:14px}
-.flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
-.flex-end{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:#3d1a00;color:#fb923c}
+.tip{font-size:12px;color:#666;margin-bottom:14px;line-height:1.5}
+.btn-ai{background:#1a3a2a;color:#4ade80;border:1px solid #166534;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-ai:hover{background:#0d2c19}
+.btn-ai:disabled{opacity:.4;cursor:not-allowed}
+.btn-ai-lg{padding:10px 18px;border-radius:8px;font-size:13px;border:none}
+.ai-tag{font-size:11px;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;margin-bottom:4px}
+.ai-tag.loading{background:#1a2a00;color:#a3e635}
+.ai-tag.done{background:#0d2c19;color:#4ade80}
+.ai-tag.error{background:#3d0000;color:#f87171}
+.spinner-sm{display:inline-block;width:9px;height:9px;border:2px solid #333;border-top-color:#4ade80;border-radius:50%;animation:spin .6s linear infinite}
+.key-card{border-color:#166534}
+.key-card .card-title{color:#4ade80}
+.flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 </style>
 </head>
 <body>
 
 <h1>🤸 Importar Calistenia em Lote</h1>
-<p class="sub">Carregue os GIFs, gere as descrições com IA e importe tudo de uma vez.</p>
+<p class="sub">Carregue os GIFs, gere as descrições com Gemini e importe tudo de uma vez.</p>
 
-<div class="card" style="border-color:#4c3a8a">
-  <div class="card-title" style="color:#c4b5fd">🔑 API Key da Anthropic</div>
-  <p style="font-size:13px;color:#888;margin-bottom:10px">Necessária para gerar descrições com IA. Pegue em <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#c4b5fd">console.anthropic.com</a>. A chave fica só no seu navegador.</p>
+<!-- UPLOAD -->
+<div class="card key-card">
+  <div class="card-title">🔑 API Key do Gemini (gratuita)</div>
+  <p class="tip" style="margin-bottom:10px">Acesse <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#4ade80">aistudio.google.com/apikey</a> → clique em "Create API Key" → copie e cole aqui. É gratuita e não precisa de cartão.</p>
   <div style="display:flex;gap:8px;align-items:center">
-    <input type="password" id="api-key-input" class="inline" placeholder="sk-ant-..." style="flex:1;border-color:#4c3a8a;font-family:monospace" oninput="saveKey(this.value)">
-    <button class="btn-ai" onclick="toggleKeyVisibility()" id="eye-btn" style="padding:8px 12px;border-radius:6px;white-space:nowrap">👁 Ver</button>
+    <input type="password" id="gemini-key" class="inline" placeholder="AIza..." style="flex:1;border-color:#166534;font-family:monospace" oninput="saveGeminiKey(this.value)">
+    <button class="btn-ai" onclick="toggleKey()" id="eye-btn" style="padding:8px 12px;white-space:nowrap">👁 Ver</button>
   </div>
   <div id="key-status" style="font-size:12px;margin-top:6px;color:#555">Nenhuma chave configurada</div>
 </div>
 
 <div class="card">
   <div class="card-title">① Selecionar GIFs</div>
-  <div class="tip">💡 O nome do arquivo vira o nome do exercício automaticamente. Renomeie antes se quiser (ex: <code>Pull Up.gif</code>).</div>
   <div class="drop-zone" id="drop-zone">
     <input type="file" id="file-input" accept="image/*,image/gif" multiple onchange="handleFiles(this.files)">
     <div class="drop-icon">📂</div>
     <div class="drop-text">Clique ou arraste os GIFs aqui</div>
-    <div class="drop-sub">Vários arquivos de uma vez · GIF, PNG, JPG</div>
+    <div class="drop-sub">Vários de uma vez · GIF, PNG, JPG</div>
   </div>
 </div>
 
+<!-- REVIEW -->
 <div class="card" id="review-card" style="display:none">
   <div class="flex-between">
-    <div class="card-title" style="margin-bottom:0">② Revisar e descrever</div>
-    <span id="count-badge" class="badge badge-orange">0 exercícios</span>
+    <div class="card-title" style="margin-bottom:0">② Revisar exercícios</div>
+    <span id="count-badge" class="badge">0</span>
   </div>
-  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-    <button class="btn btn-ai btn-ai-lg" id="gen-all-btn" onclick="generateAll()">✨ Gerar TODAS as descrições com IA</button>
-    <button class="btn btn-secondary" onclick="clearAll()" style="padding:10px 16px;font-size:13px">🗑 Limpar tudo</button>
+  <p class="tip">💡 Com a API Key do Gemini configurada, você pode gerar todas as descrições automaticamente. Ou preencha manualmente — o campo é opcional.</p>
+  <div style="margin-bottom:14px">
+    <button class="btn btn-ai btn-ai-lg" id="gen-all-btn" onclick="generateAll()">✨ Gerar TODAS com Gemini</button>
   </div>
   <div id="ex-list-wrap"></div>
   <div class="flex-end">
-    <button class="btn btn-primary" id="import-btn" onclick="startImport()">⬆ Importar tudo para o Firebase</button>
+    <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpar tudo</button>
+    <button class="btn btn-primary" id="import-btn" onclick="startImport()">⬆ Importar para o Firebase</button>
   </div>
 </div>
 
+<!-- STATUS -->
 <div class="status-bar" id="status-bar">
   <div class="status-title" id="status-title">Importando...</div>
   <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-  <div id="status-count" style="font-size:12px;color:#888;margin-bottom:8px">0 / 0</div>
+  <div id="status-count" style="font-size:12px;color:#666;margin-bottom:8px"></div>
   <div class="log" id="log"></div>
 </div>
 
@@ -124,10 +138,11 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const CHUNK_SIZE = 700000;
 const MUSCLES = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
+const TEMPLATE = `Preparação\n\nExecução\n\nDicas\n`;
 
 let exercises = [];
 
-// ─── FILES ────────────────────────────────────────────────────────────────────
+// ─── DRAG & DROP ──────────────────────────────────────────────────────────────
 const dz = document.getElementById('drop-zone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
@@ -138,88 +153,120 @@ async function handleFiles(files) {
     if (exercises.find(e => e.fileName === file.name)) continue;
     const base64 = await toBase64(file);
     const name = fileNameToExName(file.name);
-    exercises.push({ name, muscle:'Calistenia', sets:3, reps:'10', rest:60, instruction:'', fileName:file.name, base64, preview:base64, aiStatus:'idle' });
+    exercises.push({ name, muscle: 'Calistenia', sets: 3, reps: '10', rest: 60, instruction: '', fileName: file.name, base64, aiStatus: 'idle', aiError: '' });
   }
   renderList();
 }
 
 function toBase64(file) {
-  return new Promise((res,rej) => { const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
 }
 
 function fileNameToExName(f) {
-  return f.replace(/\.[^.]+$/,'').replace(/[_\-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
+  return f.replace(/\.[^.]+$/, '').replace(/[_\-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function renderList() {
   const card = document.getElementById('review-card');
   const wrap = document.getElementById('ex-list-wrap');
   document.getElementById('count-badge').textContent = `${exercises.length} exercício(s)`;
-  if (!exercises.length) { card.style.display='none'; return; }
+  if (!exercises.length) { card.style.display = 'none'; return; }
   card.style.display = 'block';
 
-  wrap.innerHTML = exercises.map((ex, i) => {
-    const tag = ex.aiStatus==='loading'
-      ? `<span class="ai-tag loading"><span class="spinner-sm"></span> Gerando...</span>`
-      : ex.aiStatus==='done' ? `<span class="ai-tag done">✅ Gerado pela IA</span>`
-      : ex.aiStatus==='error' ? `<span class="ai-tag error">⚠ ${esc(ex.aiError||'Erro desconhecido')}</span>` : '';
-
-    return `<div class="ex-card" id="excard-${i}">
-      <img src="${ex.preview}" class="ex-thumb">
-      <div class="ex-fields">
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="flex:1"><span class="ex-label">Nome</span>
-            <input class="inline" value="${esc(ex.name)}" oninput="exercises[${i}].name=this.value">
-          </div>
-          <button class="remove-btn" onclick="removeEx(${i})">×</button>
-        </div>
-        <div class="ex-row">
-          <div class="field-group"><span class="ex-label">Músculo</span>
-            <select class="inline" onchange="exercises[${i}].muscle=this.value">
-              ${MUSCLES.map(m=>`<option value="${m}"${m===ex.muscle?' selected':''}>${m}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field-group" style="max-width:60px"><span class="ex-label">Séries</span>
-            <input class="inline" type="number" value="${ex.sets}" min="1" max="10" oninput="exercises[${i}].sets=parseInt(this.value)||3">
-          </div>
-          <div class="field-group" style="max-width:70px"><span class="ex-label">Reps</span>
-            <input class="inline" value="${esc(ex.reps)}" oninput="exercises[${i}].reps=this.value">
-          </div>
-          <div class="field-group" style="max-width:78px"><span class="ex-label">Descanso(s)</span>
-            <input class="inline" type="number" value="${ex.rest}" min="10" oninput="exercises[${i}].rest=parseInt(this.value)||60">
-          </div>
-        </div>
+  wrap.innerHTML = exercises.map((ex, i) => `
+    <div class="ex-card">
+      <div class="ex-top">
+        <img src="${ex.base64}" class="ex-thumb">
         <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span class="ex-label" style="margin-bottom:0">Instrução de execução</span>
-            <button class="btn-ai" id="genbtn-${i}" onclick="generateOne(${i})" ${ex.aiStatus==='loading'?'disabled':''}>✨ Gerar com IA</button>
+          <span class="ex-label">Nome do exercício</span>
+          <input class="inline" value="${esc(ex.name)}" oninput="exercises[${i}].name=this.value">
+          <div class="ex-row" style="margin-top:8px">
+            <div class="field-group">
+              <span class="ex-label">Músculo</span>
+              <select class="inline" onchange="exercises[${i}].muscle=this.value">
+                ${MUSCLES.map(m => `<option value="${m}"${m===ex.muscle?' selected':''}>${m}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field-group" style="max-width:62px">
+              <span class="ex-label">Séries</span>
+              <input class="inline" type="number" value="${ex.sets}" min="1" max="10" oninput="exercises[${i}].sets=parseInt(this.value)||3">
+            </div>
+            <div class="field-group" style="max-width:68px">
+              <span class="ex-label">Reps</span>
+              <input class="inline" value="${esc(ex.reps)}" oninput="exercises[${i}].reps=this.value">
+            </div>
+            <div class="field-group" style="max-width:72px">
+              <span class="ex-label">Descanso(s)</span>
+              <input class="inline" type="number" value="${ex.rest}" min="10" oninput="exercises[${i}].rest=parseInt(this.value)||60">
+            </div>
           </div>
-          ${tag}
-          <textarea class="inline" id="instr-${i}" oninput="exercises[${i}].instruction=this.value" placeholder="Clique em ✨ Gerar com IA ou escreva aqui...">${esc(ex.instruction)}</textarea>
         </div>
+        <button class="remove-btn" onclick="removeEx(${i})" title="Remover">×</button>
       </div>
-    </div>`;
-  }).join('');
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <span class="ex-label" style="margin-bottom:0">Descrição / Instrução <span style="color:#333">(opcional)</span></span>
+        <button class="btn-ai" id="genbtn-${i}" onclick="generateOne(${i})" ${ex.aiStatus==='loading'?'disabled':''}>✨ Gemini</button>
+      </div>
+      ${ex.aiStatus==='loading' ? '<div class="ai-tag loading"><span class="spinner-sm"></span> Gerando...</div>'
+        : ex.aiStatus==='done' ? '<div class="ai-tag done">✅ Gerado pelo Gemini</div>'
+        : ex.aiStatus==='error' ? `<div class="ai-tag error">⚠ ${esc(ex.aiError||'Erro')}</div>`
+        : ''}
+      <textarea class="inline" oninput="exercises[${i}].instruction=this.value" placeholder="Preparação&#10;&#10;Execução&#10;&#10;Dicas">${esc(ex.instruction)}</textarea>
+    </div>
+  `).join('');
 }
 
-function removeEx(i) { exercises.splice(i,1); renderList(); }
+function removeEx(i) { exercises.splice(i, 1); renderList(); }
 
 function clearAll() {
   if (!confirm('Limpar tudo?')) return;
   exercises = [];
   renderList();
-  document.getElementById('review-card').style.display='none';
-  document.getElementById('status-bar').style.display='none';
+  document.getElementById('review-card').style.display = 'none';
+  document.getElementById('status-bar').style.display = 'none';
 }
 
-// ─── IA: GERAÇÃO DE DESCRIÇÃO ─────────────────────────────────────────────────
-async function fetchDescription(name) {
+// ─── GEMINI API KEY ───────────────────────────────────────────────────────────
+function saveGeminiKey(val) {
+  localStorage.setItem('gemini_key', val);
+  const st = document.getElementById('key-status');
+  if (val.startsWith('AIza') && val.length > 20) {
+    st.textContent = '✅ Chave configurada'; st.style.color = '#4ade80';
+  } else if (val.length > 0) {
+    st.textContent = '⚠ Formato inválido (deve começar com AIza)'; st.style.color = '#fb923c';
+  } else {
+    st.textContent = 'Nenhuma chave configurada'; st.style.color = '#555';
+  }
+}
+
+function toggleKey() {
+  const inp = document.getElementById('gemini-key');
+  const btn = document.getElementById('eye-btn');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁 Ver' : '🙈 Ocultar';
+}
+
+function getGeminiKey() {
+  return localStorage.getItem('gemini_key') || document.getElementById('gemini-key').value.trim();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('gemini_key');
+  if (saved) { document.getElementById('gemini-key').value = saved; saveGeminiKey(saved); }
+});
+
+// ─── GEMINI GERAÇÃO ───────────────────────────────────────────────────────────
+async function fetchGemini(name) {
+  const key = getGeminiKey();
+  if (!key) throw new Error('Configure a API Key do Gemini primeiro');
+
   const prompt = `Você é um personal trainer brasileiro especialista em calistenia. Gere uma instrução de execução para o exercício: "${name}".
 
-Use EXATAMENTE este formato (sem markdown, sem asteriscos, sem traços):
+Use EXATAMENTE este formato (sem asteriscos, sem traços, sem markdown):
 
 Preparação
 [1-2 frases sobre a posição inicial]
@@ -228,28 +275,24 @@ Execução
 [2-4 frases descrevendo o movimento passo a passo]
 
 Dicas
-[1-2 dicas práticas e objetivas com nomes dos músculos trabalhados]
+[1-2 dicas práticas com os músculos trabalhados]
 
-Seja direto, linguagem simples e brasileira. Máximo 130 palavras.`;
+Máximo 130 palavras. Linguagem simples e direta em português brasileiro.`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
-      messages: [{ role:'user', content: prompt }]
-    })
-  });
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    }
+  );
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Erro na API');
-
-  return data.content
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
-    .join('\n')
-    .trim();
+  if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Resposta vazia do Gemini');
+  return text.trim();
 }
 
 async function generateOne(i) {
@@ -257,12 +300,11 @@ async function generateOne(i) {
   exercises[i].aiError = '';
   renderList();
   try {
-    exercises[i].instruction = await fetchDescription(exercises[i].name);
+    exercises[i].instruction = await fetchGemini(exercises[i].name);
     exercises[i].aiStatus = 'done';
   } catch(e) {
     exercises[i].aiStatus = 'error';
     exercises[i].aiError = e.message;
-    console.error(e);
   }
   renderList();
 }
@@ -271,41 +313,33 @@ async function generateAll() {
   const btn = document.getElementById('gen-all-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Gerando...';
-
-  const toGenerate = exercises.map((_,i)=>i).filter(i => exercises[i].aiStatus !== 'done');
-  const CONCURRENCY = 3;
-
-  for (let s = 0; s < toGenerate.length; s += CONCURRENCY) {
-    const batch = toGenerate.slice(s, s + CONCURRENCY);
-    batch.forEach(i => { exercises[i].aiStatus = 'loading'; });
+  const pending = exercises.map((_,i)=>i).filter(i => exercises[i].aiStatus !== 'done');
+  for (let s = 0; s < pending.length; s += 3) {
+    const batch = pending.slice(s, s+3);
+    batch.forEach(i => { exercises[i].aiStatus='loading'; exercises[i].aiError=''; });
     renderList();
     await Promise.all(batch.map(async i => {
-      try {
-        exercises[i].instruction = await fetchDescription(exercises[i].name);
-        exercises[i].aiStatus = 'done';
-      } catch(e) {
-        exercises[i].aiStatus = 'error';
-      }
+      try { exercises[i].instruction = await fetchGemini(exercises[i].name); exercises[i].aiStatus='done'; }
+      catch(e) { exercises[i].aiStatus='error'; exercises[i].aiError=e.message; }
       renderList();
     }));
   }
-
   btn.disabled = false;
-  btn.innerHTML = '✨ Gerar TODAS as descrições com IA';
+  btn.innerHTML = '✨ Gerar TODAS com Gemini';
 }
 
-// ─── FIREBASE IMPORT ──────────────────────────────────────────────────────────
+// ─── FIREBASE ─────────────────────────────────────────────────────────────────
 async function saveGifToFirestore(exerciseId, base64, index) {
   const size = base64.length;
-  if (size <= CHUNK_SIZE) return { mode:'inline', data:base64 };
+  if (size <= CHUNK_SIZE) return { mode: 'inline', data: base64 };
   const totalChunks = Math.ceil(size / CHUNK_SIZE);
   const batch = db.batch();
   for (let i = 0; i < totalChunks; i++) {
     const ref = db.collection('exercise_gifs').doc(`${exerciseId}_gif${index}_chunk${i}`);
-    batch.set(ref, { exerciseId, gifIndex:index, chunkIndex:i, totalChunks, data:base64.substring(i*CHUNK_SIZE,(i+1)*CHUNK_SIZE) });
+    batch.set(ref, { exerciseId, gifIndex: index, chunkIndex: i, totalChunks, data: base64.substring(i*CHUNK_SIZE, (i+1)*CHUNK_SIZE) });
   }
   await batch.commit();
-  return { mode:'chunked', totalChunks };
+  return { mode: 'chunked', totalChunks };
 }
 
 function log(msg, type='') {
@@ -319,8 +353,7 @@ async function startImport() {
   const btn = document.getElementById('import-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Importando...';
-  const sb = document.getElementById('status-bar');
-  sb.style.display = 'block';
+  document.getElementById('status-bar').style.display = 'block';
   document.getElementById('status-title').textContent = `Importando ${exercises.length} exercício(s)...`;
   document.getElementById('log').innerHTML = '';
 
@@ -332,19 +365,22 @@ async function startImport() {
     try {
       log(`<span class="info">⏳ [${i+1}/${total}] ${ex.name}...</span>`);
       const ref = await db.collection('exercises').add({
-        name:ex.name, muscle:ex.muscle, sets:ex.sets, reps:ex.reps, rest:ex.rest,
-        instruction: ex.instruction||'', gifs:[],
+        name: ex.name, muscle: ex.muscle, sets: ex.sets, reps: ex.reps, rest: ex.rest,
+        instruction: ex.instruction || '',
+        gifs: [],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       const result = await saveGifToFirestore(ref.id, ex.base64, 0);
-      const gifsData = [result.mode==='inline' ? {mode:'inline',data:result.data} : {mode:'chunked',totalChunks:result.totalChunks}];
+      const gifsData = [result.mode === 'inline'
+        ? { mode:'inline', data: result.data }
+        : { mode:'chunked', totalChunks: result.totalChunks }];
       await ref.update({ gifs: gifsData });
       done++;
-      log(`<span class="ok">✅ ${ex.name} — ${ex.instruction ? '📝 com descrição' : 'sem descrição'}</span>`);
+      log(`<span class="ok">✅ ${ex.name}${ex.instruction ? ' — com descrição' : ''}</span>`);
     } catch(e) {
       log(`<span class="err">❌ Erro em "${ex.name}": ${e.message}</span>`);
     }
-    document.getElementById('progress-fill').style.width = Math.round(((i+1)/total)*100)+'%';
+    document.getElementById('progress-fill').style.width = Math.round(((i+1)/total)*100) + '%';
     document.getElementById('status-count').textContent = `${i+1} / ${total}`;
   }
 
@@ -352,7 +388,7 @@ async function startImport() {
   log(`<span class="ok">━━ ${done} ok · ${total-done} erro(s) ━━</span>`);
   btn.innerHTML = '✅ Concluído!';
   btn.style.background = '#166534';
-  setTimeout(() => { btn.disabled=false; btn.innerHTML='⬆ Importar tudo para o Firebase'; btn.style.background=''; }, 5000);
+  setTimeout(() => { btn.disabled=false; btn.innerHTML='⬆ Importar para o Firebase'; btn.style.background=''; }, 4000);
 }
 </script>
 </body>
