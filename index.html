@@ -128,6 +128,14 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
 .instruction-title{font-size:13px;font-weight:700;color:#e85d04;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
 .instruction-text{font-size:14px;color:#ccc;line-height:1.6;white-space:pre-wrap}
 
+/* HINT SÉRIE */
+.set-btn-wrap{position:relative;display:inline-block}
+.set-hint{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#e85d04;color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:10;animation:hintBounce 1s ease infinite}
+.set-hint::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#e85d04}
+@keyframes hintBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+.set-btn.hint-target{box-shadow:0 0 0 3px rgba(232,93,4,.5);animation:hintPulse 1s ease infinite}
+@keyframes hintPulse{0%,100%{box-shadow:0 0 0 3px rgba(232,93,4,.5)}50%{box-shadow:0 0 0 6px rgba(232,93,4,.2)}}
+
 
 /* AVATAR GRID */
 .avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
@@ -1232,9 +1240,15 @@ async function loadClientData() {
           <div class="ex-name">${ex.name}</div>
           <div class="ex-detail">${ex.muscle} · ${ex.sets} séries · ${ex.reps} reps · ${ex.rest}s</div>
           <div class="ex-check">`;
+      const firstPending = Array.from({length:ex.sets},(_,i)=>i+1).find(s=>!done.includes(s));
       for (let s=1;s<=ex.sets;s++) {
         const isDone = done.includes(s);
-        html += `<button class="set-btn ${isDone?'done':''}" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button>`;
+        const isHint = !isDone && s===firstPending && doneSets===0 && ex===exercises[0];
+        if(isHint){
+          html += `<span class="set-btn-wrap"><div class="set-hint">✅ Toque ao concluir!</div><button class="set-btn hint-target" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button></span>`;
+        } else {
+          html += `<button class="set-btn ${isDone?'done':''}" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button>`;
+        }
       }
       html += `</div></div></div>`;
     });
@@ -1276,8 +1290,14 @@ async function toggleSet(exId, setNum, dateStr) {
   if (idx>=0) sets.splice(idx,1); else sets.push(setNum);
   if (!logDoc.exists) { data.completedSets[exId]=sets; await clientWorkouts.logRef.set({uid:currentUser.uid,date:dateStr,completedSets:data.completedSets}); }
   else await clientWorkouts.logRef.update({[`completedSets.${exId}`]:sets});
-  const btn = document.getElementById(`set-${exId}-${setNum}`);
-  btn.className='set-btn'+(sets.includes(setNum)?' done':'');
+  // remove hint wrapper se existir
+  const rawBtn = document.getElementById(`set-${exId}-${setNum}`);
+  if(rawBtn){
+    const wrap = rawBtn.closest('.set-btn-wrap');
+    if(wrap){ wrap.replaceWith(rawBtn); }
+    rawBtn.className='set-btn'+(sets.includes(setNum)?' done':'');
+    rawBtn.classList.remove('hint-target');
+  }
   clientWorkouts.completedSets[exId]=sets;
   let done=0,total=0;
   clientWorkouts.exercises.forEach(ex=>{total+=ex.sets;done+=(clientWorkouts.completedSets[ex.id]||[]).length;});
