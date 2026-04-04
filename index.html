@@ -1084,11 +1084,13 @@ async function renewAccess(uid, name) {
 
 async function openAssignWorkout(uid, name) {
   assignUserId = uid;
+  assignTemplate = {};
   document.getElementById('modal-assign-title').textContent = 'Treino de '+name;
+  document.getElementById('modal-assign-body').innerHTML = '<div class="loader"><div class="spinner"></div>Carregando...</div>';
+  document.getElementById('modal-assign').style.display = 'flex'; // abre imediato
   const doc = await db.collection('users').doc(uid).get();
   assignTemplate = doc.data().weeklyTemplate || {};
   renderAssignModal();
-  document.getElementById('modal-assign').style.display = 'flex';
 }
 
 function renderAssignModal() {
