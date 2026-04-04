@@ -68,6 +68,16 @@ textarea.inline:focus{border-color:#e85d04}
 <h1>🤸 Importar Calistenia em Lote</h1>
 <p class="sub">Carregue os GIFs, gere as descrições com IA e importe tudo de uma vez.</p>
 
+<div class="card" style="border-color:#4c3a8a">
+  <div class="card-title" style="color:#c4b5fd">🔑 API Key da Anthropic</div>
+  <p style="font-size:13px;color:#888;margin-bottom:10px">Necessária para gerar descrições com IA. Pegue em <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#c4b5fd">console.anthropic.com</a>. A chave fica só no seu navegador.</p>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input type="password" id="api-key-input" class="inline" placeholder="sk-ant-..." style="flex:1;border-color:#4c3a8a;font-family:monospace" oninput="saveKey(this.value)">
+    <button class="btn-ai" onclick="toggleKeyVisibility()" id="eye-btn" style="padding:8px 12px;border-radius:6px;white-space:nowrap">👁 Ver</button>
+  </div>
+  <div id="key-status" style="font-size:12px;margin-top:6px;color:#555">Nenhuma chave configurada</div>
+</div>
+
 <div class="card">
   <div class="card-title">① Selecionar GIFs</div>
   <div class="tip">💡 O nome do arquivo vira o nome do exercício automaticamente. Renomeie antes se quiser (ex: <code>Pull Up.gif</code>).</div>
