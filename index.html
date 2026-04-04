@@ -651,16 +651,21 @@ function filterAdminExercises() {
   const el = document.getElementById('exercises-list');
   let html = '';
   let found = false;
+  const isSearching = q.length > 0;
   muscleOrder.forEach(muscle => {
     const list = grouped[muscle];
     if (!list || !list.length) return;
     found = true;
-    html += `<div style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    const groupId = 'exgroup-' + muscle.replace(/[^a-zA-Z]/g,'');
+    const autoOpen = isSearching ? ' open' : '';
+    html += `<div style="margin-bottom:8px">
+      <div class="muscle-group-header${autoOpen}" onclick="toggleAdminGroup('${groupId}', this)">
         <span style="font-size:18px">${MUSCLE_EMOJI[muscle]||'💪'}</span>
         <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#e85d04">${muscle}</span>
         <span style="font-size:11px;color:#555;margin-left:2px">${list.length} exercício(s)</span>
-      </div>`;
+        <span class="muscle-group-arrow">▶</span>
+      </div>
+      <div class="muscle-group-body${autoOpen}" id="${groupId}">`;
     list.forEach(ex => {
       const gifCount = ex.gifs ? ex.gifs.length : (ex.gifMode && ex.gifMode !== 'none' ? 1 : 0);
       html += `<div class="exercise-card" id="exrow-${ex.id}">
@@ -679,7 +684,7 @@ function filterAdminExercises() {
         </div>
       </div>`;
     });
-    html += `</div>`;
+    html += `</div></div>`;
   });
   if (!found) html = '<div class="empty"><div class="empty-icon">🔍</div>Nenhum exercício encontrado</div>';
   el.innerHTML = html;
@@ -861,12 +866,15 @@ async function renderExercisesList() {
   muscleOrder.forEach(muscle => {
     const list = grouped[muscle];
     if (!list || !list.length) return;
-    html += `<div style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    const groupId = 'exgroup-' + muscle.replace(/[^a-zA-Z]/g,'');
+    html += `<div style="margin-bottom:8px">
+      <div class="muscle-group-header" onclick="toggleAdminGroup('${groupId}', this)">
         <span style="font-size:18px">${MUSCLE_EMOJI[muscle]||'💪'}</span>
         <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#e85d04">${muscle}</span>
         <span style="font-size:11px;color:#555;margin-left:2px">${list.length} exercício(s)</span>
-      </div>`;
+        <span class="muscle-group-arrow">▶</span>
+      </div>
+      <div class="muscle-group-body" id="${groupId}">`;
     list.forEach(ex => {
       const gifCount = ex.gifs ? ex.gifs.length : (ex.gifMode && ex.gifMode !== 'none' ? 1 : 0);
       html += `<div class="exercise-card" id="exrow-${ex.id}">
@@ -885,7 +893,7 @@ async function renderExercisesList() {
         </div>
       </div>`;
     });
-    html += `</div>`;
+    html += `</div></div>`;
   });
 
   el.innerHTML = html;
@@ -905,6 +913,13 @@ function adminTab(name) {
     document.querySelectorAll('.tabs .tab')[i].className = 'tab'+(n===name?' active':'');
     document.getElementById('admin-'+n).style.display = n===name?'block':'none';
   });
+}
+
+function toggleAdminGroup(groupId, header) {
+  const body = document.getElementById(groupId);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
 }
 
 // ─── EXERCISES ────────────────────────────────────────────────────────────────
