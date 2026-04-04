@@ -221,12 +221,14 @@ body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:1
 
 <!-- CLIENT -->
 <div id="screen-client" class="screen">
-  <div class="topbar">
-    <div class="topbar-title"><img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" style="width:30px;height:30px;object-fit:contain;vertical-align:middle;mix-blend-mode:screen"></div>
-    <div class="topbar-right">
-      <span id="client-name-top" style="font-size:13px;color:#888"></span>
-      <div class="avatar" id="client-avatar" onclick="openProfileModal()" title="Editar perfil">?</div>
-      <button class="btn-sm btn-secondary" onclick="logout()">Sair</button>
+  <div class="topbar" style="background:linear-gradient(135deg,#1a1a1a 0%,#1f1000 100%);padding:10px 16px;border-bottom:1px solid #2d1a00">
+    <img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" style="width:38px;height:38px;object-fit:contain;mix-blend-mode:screen">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="text-align:right">
+        <div id="client-name-top" style="font-size:13px;font-weight:600;color:#fff;line-height:1.2"></div>
+        <div style="font-size:10px;color:#e85d04;font-weight:600;letter-spacing:.06em">MEMBRO</div>
+      </div>
+      <div class="avatar" id="client-avatar" onclick="openProfileModal()" title="Editar perfil" style="width:38px;height:38px;font-size:14px;border:2px solid #e85d04;cursor:pointer">?</div>
     </div>
   </div>
   <div class="tabs">
@@ -1251,8 +1253,8 @@ async function toggleWeekDay(key) {
         ${MUSCLE_EMOJI[ex.muscle]||'💪'}
         <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:18px" onmouseover="this.style.opacity=1;this.style.background='rgba(0,0,0,.5)'" onmouseout="this.style.opacity=0;this.style.background='rgba(0,0,0,0)'">👁</div>
       </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ex.name}</div>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})">
+        <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">${ex.name}</div>
         <div style="font-size:11px;color:#666;margin-top:3px">${ex.sets} séries · ${ex.reps} reps · ${ex.rest}s descanso</div>
       </div>
       <div style="flex-shrink:0;text-align:right">
