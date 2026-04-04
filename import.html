@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Importar Calistenia em Lote</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f0f0f;color:#fff;min-height:100vh;padding:24px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.sub{color:#888;font-size:14px;margin-bottom:28px}
+.card{background:#1a1a1a;border-radius:14px;padding:20px;margin-bottom:16px;border:1px solid #2a2a2a}
+.card-title{font-size:14px;font-weight:700;color:#e85d04;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.drop-zone{border:2px dashed #333;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#111}
+.drop-zone:hover,.drop-zone.dragover{border-color:#e85d04;background:#1a0a00}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:36px;margin-bottom:8px}
+.drop-text{font-size:15px;font-weight:600;margin-bottom:4px}
+.drop-sub{font-size:12px;color:#555}
+
+/* tabela de exercícios */
+.ex-table{width:100%;border-collapse:collapse;margin-top:4px}
+.ex-table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#555;text-align:left;padding:6px 10px;border-bottom:1px solid #222}
+.ex-table td{padding:8px 10px;border-bottom:1px solid #1a1a1a;vertical-align:middle}
+.ex-table tr:last-child td{border-bottom:none}
+.ex-table tr:hover td{background:#111}
+.thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #222}
+.thumb-placeholder{width:48px;height:48px;border-radius:8px;background:#222;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+input.inline{background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;color:#fff;font-size:13px;outline:none;width:100%}
+input.inline:focus{border-color:#e85d04}
+select.inline{background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:6px 8px;color:#fff;font-size:13px;outline:none}
+select.inline:focus{border-color:#e85d04}
+.remove-btn{background:none;border:none;color:#555;font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+.remove-btn:hover{color:#ef4444}
+.btn{padding:12px 20px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:#e85d04;color:#fff}
+.btn-primary:hover{background:#d14e00}
+.btn-primary:disabled{background:#5a2a00;color:#888;cursor:not-allowed}
+.btn-secondary{background:#222;color:#fff;border:1px solid #333}
+.btn-secondary:hover{background:#2a2a2a}
+.status-bar{background:#111;border-radius:10px;padding:16px;margin-top:16px;display:none}
+.status-title{font-size:13px;font-weight:700;margin-bottom:10px;color:#e85d04}
+.progress-wrap{background:#222;border-radius:4px;height:8px;overflow:hidden;margin-bottom:8px}
+.progress-fill{height:100%;background:#e85d04;border-radius:4px;transition:width .3s}
+.log{max-height:200px;overflow-y:auto;font-size:12px;color:#888;line-height:1.8;font-family:monospace}
+.log .ok{color:#4ade80}
+.log .err{color:#f87171}
+.log .info{color:#fb923c}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #333;border-top-color:#e85d04;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-orange{background:#3d1a00;color:#fb923c}
+.badge-green{background:#0d2c19;color:#4ade80}
+.empty-state{text-align:center;padding:32px 20px;color:#555;font-size:14px}
+.tip{background:#1a0a00;border:1px solid #3d1a00;border-radius:8px;padding:12px 14px;font-size:13px;color:#fb923c;margin-bottom:14px}
+.flex-end{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+</style>
+</head>
+<body>
+
+<h1>🤸 Importar Calistenia em Lote</h1>
+<p class="sub">Selecione os GIFs, revise os nomes e clique em Importar tudo.</p>
+
+<!-- STEP 1: UPLOAD -->
+<div class="card">
+  <div class="card-title">① Selecionar GIFs</div>
+  <div class="tip">💡 O nome do arquivo vira o nome do exercício automaticamente. Você pode editar antes de importar.</div>
+  <div class="drop-zone" id="drop-zone">
+    <input type="file" id="file-input" accept="image/*,image/gif" multiple onchange="handleFiles(this.files)">
+    <div class="drop-icon">📂</div>
+    <div class="drop-text">Clique ou arraste os GIFs aqui</div>
+    <div class="drop-sub">Selecione vários de uma vez · Aceita GIF, PNG, JPG · Máx 5MB por arquivo</div>
+  </div>
+</div>
+
+<!-- STEP 2: REVIEW TABLE -->
+<div class="card" id="review-card" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:0">② Revisar exercícios</div>
+    <span id="count-badge" class="badge badge-orange">0 exercícios</span>
+  </div>
+  <div id="table-wrap">
+    <div class="empty-state">Nenhum arquivo selecionado ainda.</div>
+  </div>
+  <div class="flex-end">
+    <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpar tudo</button>
+    <button class="btn btn-primary" id="import-btn" onclick="startImport()">⬆ Importar tudo para o Firebase</button>
+  </div>
+</div>
+
+<!-- STATUS -->
+<div class="status-bar" id="status-bar">
+  <div class="status-title" id="status-title">Importando...</div>
+  <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div id="status-count" style="font-size:12px;color:#888;margin-bottom:8px">0 / 0</div>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+// ─── FIREBASE CONFIG (igual ao app principal) ─────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDRbCnI0bMRJqxJiPrPe7U6W4hwR3mHE9k",
+  authDomain: "treinos-gym-6c819.firebaseapp.com",
+  projectId: "treinos-gym-6c819",
+  storageBucket: "treinos-gym-6c819.firebasestorage.app",
+  messagingSenderId: "394688092936",
+  appId: "1:394688092936:web:4bda605a68ee26d5792abd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const CHUNK_SIZE = 700000;
+
+// exercícios pendentes: [{ name, muscle, sets, reps, rest, file, base64, preview }]
+let exercises = [];
+
+// ─── DRAG & DROP ──────────────────────────────────────────────────────────────
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+
+// ─── FILE HANDLER ─────────────────────────────────────────────────────────────
+async function handleFiles(files) {
+  const arr = Array.from(files);
+  for (const file of arr) {
+    // evita duplicata pelo nome
+    if (exercises.find(e => e.fileName === file.name)) continue;
+    const base64 = await toBase64(file);
+    const name = fileNameToExName(file.name);
+    exercises.push({ name, muscle: 'Calistenia', sets: 3, reps: '10', rest: 60, fileName: file.name, base64, preview: base64 });
+  }
+  renderTable();
+}
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function fileNameToExName(fileName) {
+  // remove extensão, troca _ e - por espaço, capitaliza
+  return fileName
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
+}
+
+// ─── RENDER TABLE ─────────────────────────────────────────────────────────────
+const MUSCLES = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
+
+function renderTable() {
+  const card = document.getElementById('review-card');
+  const wrap = document.getElementById('table-wrap');
+  const badge = document.getElementById('count-badge');
+
+  if (!exercises.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  badge.textContent = `${exercises.length} exercício(s)`;
+
+  const muscleOpts = MUSCLES.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  let rows = exercises.map((ex, i) => `
+    <tr id="row-${i}">
+      <td><img src="${ex.preview}" class="thumb" alt=""></td>
+      <td><input class="inline" value="${ex.name}" oninput="exercises[${i}].name=this.value" style="min-width:160px"></td>
+      <td>
+        <select class="inline" onchange="exercises[${i}].muscle=this.value">
+          ${MUSCLES.map(m => `<option value="${m}"${m===ex.muscle?' selected':''}>${m}</option>`).join('')}
+        </select>
+      </td>
+      <td><input class="inline" type="number" value="${ex.sets}" min="1" max="10" oninput="exercises[${i}].sets=parseInt(this.value)||3" style="width:54px"></td>
+      <td><input class="inline" value="${ex.reps}" oninput="exercises[${i}].reps=this.value" style="width:70px" placeholder="10"></td>
+      <td><input class="inline" type="number" value="${ex.rest}" min="10" oninput="exercises[${i}].rest=parseInt(this.value)||60" style="width:64px"></td>
+      <td><button class="remove-btn" onclick="removeEx(${i})">×</button></td>
+    </tr>
+  `).join('');
+
+  wrap.innerHTML = `
+    <table class="ex-table">
+      <thead>
+        <tr>
+          <th>GIF</th>
+          <th>Nome do exercício</th>
+          <th>Músculo</th>
+          <th>Séries</th>
+          <th>Reps</th>
+          <th>Descanso (s)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function removeEx(i) {
+  exercises.splice(i, 1);
+  renderTable();
+}
+
+function clearAll() {
+  if (!confirm('Limpar todos os exercícios da lista?')) return;
+  exercises = [];
+  renderTable();
+  document.getElementById('review-card').style.display = 'none';
+  document.getElementById('status-bar').style.display = 'none';
+}
+
+// ─── IMPORT ───────────────────────────────────────────────────────────────────
+async function saveGifToFirestore(exerciseId, base64, index) {
+  const size = base64.length;
+  if (size <= CHUNK_SIZE) {
+    return { mode: 'inline', data: base64 };
+  }
+  const totalChunks = Math.ceil(size / CHUNK_SIZE);
+  const batch = db.batch();
+  for (let i = 0; i < totalChunks; i++) {
+    const ref = db.collection('exercise_gifs').doc(`${exerciseId}_gif${index}_chunk${i}`);
+    batch.set(ref, {
+      exerciseId, gifIndex: index, chunkIndex: i, totalChunks,
+      data: base64.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+    });
+  }
+  await batch.commit();
+  return { mode: 'chunked', totalChunks };
+}
+
+function log(msg, type = '') {
+  const el = document.getElementById('log');
+  el.innerHTML += `<div class="${type}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function startImport() {
+  if (!exercises.length) { alert('Nenhum exercício para importar.'); return; }
+
+  const btn = document.getElementById('import-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Importando...';
+
+  const sb = document.getElementById('status-bar');
+  sb.style.display = 'block';
+  document.getElementById('status-title').textContent = `Importando ${exercises.length} exercício(s)...`;
+  document.getElementById('log').innerHTML = '';
+
+  let done = 0;
+  const total = exercises.length;
+
+  for (let i = 0; i < exercises.length; i++) {
+    const ex = exercises[i];
+    try {
+      log(`<span class="info">⏳ [${i+1}/${total}] ${ex.name}...</span>`);
+
+      // 1. cria o documento do exercício
+      const ref = await db.collection('exercises').add({
+        name: ex.name,
+        muscle: ex.muscle,
+        sets: ex.sets,
+        reps: ex.reps,
+        rest: ex.rest,
+        instruction: '',
+        gifs: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // 2. salva o gif
+      const result = await saveGifToFirestore(ref.id, ex.base64, 0);
+      const gifsData = [result.mode === 'inline'
+        ? { mode: 'inline', data: result.data }
+        : { mode: 'chunked', totalChunks: result.totalChunks }];
+
+      // 3. atualiza o doc com o gif
+      await ref.update({ gifs: gifsData });
+
+      done++;
+      log(`<span class="ok">✅ ${ex.name} salvo (${result.mode === 'chunked' ? result.totalChunks+' chunks' : 'inline'})</span>`);
+    } catch (e) {
+      log(`<span class="err">❌ Erro em "${ex.name}": ${e.message}</span>`);
+    }
+
+    // atualiza progresso
+    const pct = Math.round(((i + 1) / total) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('status-count').textContent = `${i + 1} / ${total}`;
+  }
+
+  document.getElementById('status-title').textContent = `✅ Concluído! ${done}/${total} exercícios importados.`;
+  log(`<span class="ok">━━ Importação finalizada: ${done} ok, ${total - done} erro(s) ━━</span>`);
+
+  btn.innerHTML = '✅ Importação concluída!';
+  btn.style.background = '#166534';
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '⬆ Importar tudo para o Firebase';
+    btn.style.background = '';
+  }, 5000);
+}
+</script>
+</body>
+</html>
