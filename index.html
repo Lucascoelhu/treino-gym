@@ -1241,9 +1241,10 @@ async function loadClientData() {
           <div class="ex-detail">${ex.muscle} · ${ex.sets} séries · ${ex.reps} reps · ${ex.rest}s</div>
           <div class="ex-check">`;
       const firstPending = Array.from({length:ex.sets},(_,i)=>i+1).find(s=>!done.includes(s));
+      const hintAlreadySeen = localStorage.getItem('setHintSeen');
       for (let s=1;s<=ex.sets;s++) {
         const isDone = done.includes(s);
-        const isHint = !isDone && s===firstPending && doneSets===0 && ex===exercises[0];
+        const isHint = !hintAlreadySeen && !isDone && s===firstPending && doneSets===0 && ex===exercises[0];
         if(isHint){
           html += `<span class="set-btn-wrap"><div class="set-hint">✅ Toque ao concluir!</div><button class="set-btn hint-target" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button></span>`;
         } else {
@@ -1294,7 +1295,7 @@ async function toggleSet(exId, setNum, dateStr) {
   const rawBtn = document.getElementById(`set-${exId}-${setNum}`);
   if(rawBtn){
     const wrap = rawBtn.closest('.set-btn-wrap');
-    if(wrap){ wrap.replaceWith(rawBtn); }
+    if(wrap){ wrap.replaceWith(rawBtn); localStorage.setItem('setHintSeen','1'); }
     rawBtn.className='set-btn'+(sets.includes(setNum)?' done':'');
     rawBtn.classList.remove('hint-target');
   }
@@ -1506,7 +1507,7 @@ function closeGifModal(e) {
     </div>
     <div id="profile-msg" class="msg"></div>
     <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfile()">Salvar</button>
-    <button class="btn btn-secondary" style="margin-top:8px" onclick="logout()">Sair da conta</button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="closeModal('modal-profile');logout()">Sair da conta</button>
   </div>
 </div>
 
