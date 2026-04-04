@@ -561,34 +561,72 @@ async function saveGifToFirestore(exerciseId, base64, index) {
   return { mode: 'chunked', totalChunks };
 }
 
+// ─── GIF CACHE (Cache Storage API) ───────────────────────────────────────────
+const GIF_CACHE_NAME = 'coelho-gifs-v1';
+
+function gifCacheKey(exId) {
+  return `https://gif-cache/${exId}`;
+}
+
+async function getGifCache(exId) {
+  try {
+    const cache = await caches.open(GIF_CACHE_NAME);
+    const res = await cache.match(gifCacheKey(exId));
+    if (!res) return null;
+    return await res.json();
+  } catch(e) { return null; }
+}
+
+async function setGifCache(exId, srcs) {
+  try {
+    const cache = await caches.open(GIF_CACHE_NAME);
+    await cache.put(gifCacheKey(exId), new Response(JSON.stringify(srcs), { headers: { 'Content-Type': 'application/json' } }));
+  } catch(e) {}
+}
+
+async function clearGifCache(exId) {
+  try {
+    const cache = await caches.open(GIF_CACHE_NAME);
+    await cache.delete(gifCacheKey(exId));
+  } catch(e) {}
+}
+
 async function loadGifSrcs(ex) {
+  // tenta o cache primeiro
+  const cached = await getGifCache(ex.id);
+  if (cached) return cached;
+
   const gifs = ex.gifs || [];
+  let srcs = [];
+
   if (gifs.length === 0) {
     // compatibilidade com formato antigo (gifMode único)
-    if (ex.gifMode === 'inline' && ex.gifData) return [ex.gifData];
-    if (ex.gifMode === 'chunked' && ex.gifTotalChunks) {
+    if (ex.gifMode === 'inline' && ex.gifData) { srcs = [ex.gifData]; }
+    else if (ex.gifMode === 'chunked' && ex.gifTotalChunks) {
       const chunks = [];
       for (let i = 0; i < ex.gifTotalChunks; i++) {
         const d = await db.collection('exercise_gifs').doc(`${ex.id}_chunk_${i}`).get();
         if (d.exists) chunks.push(d.data().data);
       }
-      return [chunks.join('')];
+      srcs = [chunks.join('')];
     }
-    return [];
-  }
-  const srcs = [];
-  for (let gi = 0; gi < gifs.length; gi++) {
-    const g = gifs[gi];
-    if (g.mode === 'inline') { srcs.push(g.data); }
-    else if (g.mode === 'chunked') {
-      const chunks = [];
-      for (let i = 0; i < g.totalChunks; i++) {
-        const d = await db.collection('exercise_gifs').doc(`${ex.id}_gif${gi}_chunk${i}`).get();
-        if (d.exists) chunks.push(d.data().data);
+  } else {
+    for (let gi = 0; gi < gifs.length; gi++) {
+      const g = gifs[gi];
+      if (g.mode === 'inline') { srcs.push(g.data); }
+      else if (g.mode === 'chunked') {
+        const chunks = [];
+        for (let i = 0; i < g.totalChunks; i++) {
+          const d = await db.collection('exercise_gifs').doc(`${ex.id}_gif${gi}_chunk${i}`).get();
+          if (d.exists) chunks.push(d.data().data);
+        }
+        srcs.push(chunks.join(''));
       }
-      srcs.push(chunks.join(''));
     }
   }
+
+  // salva no cache para próximas visitas
+  if (srcs.length > 0) setGifCache(ex.id, srcs);
   return srcs;
 }
 
@@ -1009,6 +1047,7 @@ async function saveExercise() {
         gifsData.push(result.mode === 'inline' ? { mode:'inline', data: result.data } : { mode:'chunked', totalChunks: result.totalChunks });
       }
       await ref.update({ ...baseData, gifs: gifsData, gifMode: null, gifData: null, gifTotalChunks: null });
+      await clearGifCache(editingExId);
       const idx = allExercises.findIndex(e=>e.id===editingExId);
       if (idx>=0) allExercises[idx] = { id:editingExId, ...baseData, gifs: gifsData, freeVisible, variations };
 
@@ -1047,6 +1086,7 @@ async function deleteExercise(id) {
     for(let i=0;i<ex.gifTotalChunks;i++) batch.delete(db.collection('exercise_gifs').doc(`${id}_chunk_${i}`));
   }
   await batch.commit();
+  await clearGifCache(id);
   allExercises = allExercises.filter(e=>e.id!==id);
   renderExercisesList();
   document.getElementById('stat-exercises').textContent = allExercises.length;
