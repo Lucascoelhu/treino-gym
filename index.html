@@ -1175,6 +1175,40 @@ function renderDayExercisesList(q) {
     if (!filtered.length) {
       html = '<div class="empty" style="padding:20px">Nenhum exercício encontrado</div>';
     } else {
+      // ── SEÇÃO: SELECIONADOS NO TOPO (agrupados por músculo) ──
+      const selectedExs = allExercises.filter(ex => editingDayExercises.includes(ex.id));
+      if (selectedExs.length > 0 && !q) {
+        html += `<div style="margin-bottom:4px;padding:6px 2px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4ade80;margin-bottom:8px">✅ Selecionados (${selectedExs.length})</div>`;
+
+        const selGrouped = {};
+        muscleOrder.forEach(m => selGrouped[m] = []);
+        selectedExs.forEach(ex => { if (!selGrouped[ex.muscle]) selGrouped[ex.muscle] = []; selGrouped[ex.muscle].push(ex); });
+
+        muscleOrder.forEach(muscle => {
+          const list = selGrouped[muscle];
+          if (!list || !list.length) return;
+          const groupId = 'sel-mg-' + muscle.replace(/[^a-z]/gi,'');
+          html += `<div class="muscle-group-header open" style="background:#0d2c19;border-color:#166534" onclick="toggleMuscleGroup('${groupId}',this)">
+            <span style="font-size:16px">${MUSCLE_EMOJI[muscle]||'💪'}</span>
+            <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4ade80">${muscle}</span>
+            <span style="font-size:11px;color:#555;margin-left:4px">${list.length} ex.</span>
+            <span class="muscle-group-arrow" style="color:#4ade80">›</span>
+          </div>
+          <div class="muscle-group-body open" id="${groupId}">`;
+          list.forEach(ex => {
+            html += `<div class="exercise-card" id="exday-sel-${ex.id}" onclick="toggleExInDay('${ex.id}')" style="cursor:pointer;border-color:#e85d04;background:#1a0a00">
+              <div style="width:48px;height:48px;border-radius:8px;background:#222;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px" id="exday-gif-sel-${ex.id}">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
+              <div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
+              <div style="font-size:18px">✅</div>
+            </div>`;
+          });
+          html += `</div>`;
+        });
+        html += `</div><div style="border-top:1px solid #2a2a2a;margin:8px 0 12px"></div>`;
+      }
+
+      // ── SEÇÃO: TODOS OS GRUPOS ──
       const grouped = {};
       muscleOrder.forEach(m => grouped[m] = []);
       filtered.forEach(ex => { if (!grouped[ex.muscle]) grouped[ex.muscle] = []; grouped[ex.muscle].push(ex); });
@@ -1195,7 +1229,7 @@ function renderDayExercisesList(q) {
         <div class="muscle-group-body${isOpen?' open':''}" id="${groupId}">`;
         list.forEach(ex => {
           const inDay = editingDayExercises.includes(ex.id);
-          html += `<div class="exercise-card" id="exday-${ex.id}" onclick="toggleExInDay('${ex.id}')" style="cursor:pointer;border-color:${inDay?'#e85d04':'#222'}">
+          html += `<div class="exercise-card" id="exday-${ex.id}" onclick="toggleExInDay('${ex.id}')" style="cursor:pointer;border-color:${inDay?'#e85d04':'#222'}${inDay?';background:#1a0a00':''}">
             <div style="width:48px;height:48px;border-radius:8px;background:#222;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px" id="exday-gif-${ex.id}">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
             <div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
             <div style="font-size:18px" id="exday-check-${ex.id}">${inDay?'✅':'➕'}</div>
@@ -1208,19 +1242,24 @@ function renderDayExercisesList(q) {
 
   listEl.innerHTML = html;
 
-  // carrega thumbnails
+  // carrega thumbnails (seção selecionados + seção geral)
   allExercises.forEach(async ex => {
     const srcs = await loadGifSrcs(ex);
-    if (srcs.length > 0) { const el=document.getElementById('exday-gif-'+ex.id); if(el) el.innerHTML=`<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`; }
+    if (srcs.length > 0) {
+      const imgHtml = `<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
+      const elSel = document.getElementById('exday-gif-sel-'+ex.id);
+      if(elSel) elSel.innerHTML = imgHtml;
+      const el = document.getElementById('exday-gif-'+ex.id);
+      if(el) el.innerHTML = imgHtml;
+    }
   });
 }
 
 function toggleExInDay(id) {
   const idx = editingDayExercises.indexOf(id);
   if (idx>=0) editingDayExercises.splice(idx,1); else editingDayExercises.push(id);
-  const inDay = editingDayExercises.includes(id);
-  const el = document.getElementById('exday-'+id);
-  if(el) { el.style.borderColor=inDay?'#e85d04':'#222'; document.getElementById('exday-check-'+id).textContent=inDay?'✅':'➕'; }
+  const q = document.getElementById('assign-search')?.value.toLowerCase().trim() || '';
+  renderDayExercisesList(q);
 }
 
 function saveDayBack() {
