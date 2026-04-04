@@ -201,6 +201,7 @@ async function handleFiles(files) {
     if (exercises.find(e => e.fileName === file.name)) continue;
     const base64 = await toBase64(file);
     const name = fileNameToExName(file.name);
+    //ALTERAR AQUI
     exercises.push({ name, muscle: 'Costas', sets: 3, reps: '12', rest: 60, instruction: '', fileName: file.name, base64, aiStatus: 'idle', aiError: '' });
   }
   renderList();
