@@ -1115,27 +1115,48 @@ function editDayWorkout(key) {
   editingDayKey = key;
   const w = assignTemplate[key]||{};
   editingDayExercises = [...(w.exercises||[])];
-  renderDayExercises('');
+
+  // Monta estrutura fixa (label + search + lista + botões) — só uma vez
+  const body = document.getElementById('modal-assign-body');
+  body.innerHTML = `
+    <div class="field"><label>Nome do treino</label><input type="text" id="day-label" value="${w.label||''}" placeholder="Ex: Peito e Tríceps"></div>
+    <input type="text" id="assign-search" placeholder="🔍 Buscar exercício..."
+      style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:12px">
+    <div id="assign-ex-list" style="max-height:360px;overflow-y:auto"></div>
+    <div class="flex mt16" style="gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveDayBack()">Confirmar</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="renderAssignModal()">Voltar</button>
+    </div>`;
+
+  // Listener no input — atualiza só a lista, sem recriar o input
+  document.getElementById('assign-search').addEventListener('input', function() {
+    renderDayExercisesList(this.value);
+  });
+
+  renderDayExercisesList('');
 }
 
 function renderDayExercises(q) {
-  const w = assignTemplate[editingDayKey]||{};
-  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
+  // compatibilidade — redireciona para a nova versão
+  renderDayExercisesList(q);
+}
 
-  let html = `<div class="field"><label>Nome do treino</label><input type="text" id="day-label" value="${w.label||''}" placeholder="Ex: Peito e Tríceps"></div>
-  <input type="text" id="assign-search" placeholder="🔍 Buscar exercício..." oninput="renderDayExercises(this.value)" value="${q}"
-    style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:12px">
-  <div style="max-height:360px;overflow-y:auto">`;
+function renderDayExercisesList(q) {
+  const muscleOrder = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
+  const listEl = document.getElementById('assign-ex-list');
+  if (!listEl) return;
+
+  let html = '';
 
   if (!allExercises.length) {
-    html += '<div class="empty" style="padding:20px">Adicione exercícios primeiro</div>';
+    html = '<div class="empty" style="padding:20px">Adicione exercícios primeiro</div>';
   } else {
     const filtered = q
       ? allExercises.filter(ex => ex.name.toLowerCase().includes(q.toLowerCase()) || ex.muscle.toLowerCase().includes(q.toLowerCase()))
       : allExercises;
 
     if (!filtered.length) {
-      html += '<div class="empty" style="padding:20px">Nenhum exercício encontrado</div>';
+      html = '<div class="empty" style="padding:20px">Nenhum exercício encontrado</div>';
     } else {
       const grouped = {};
       muscleOrder.forEach(m => grouped[m] = []);
@@ -1146,7 +1167,6 @@ function renderDayExercises(q) {
         if (!list || !list.length) return;
         const anySelected = list.some(ex => editingDayExercises.includes(ex.id));
         const groupId = 'mg-' + muscle.replace(/[^a-z]/gi,'');
-        // abre automaticamente se tiver selecionado ou se há busca ativa
         const isOpen = anySelected || !!q;
         html += `<div class="muscle-group-header${isOpen?' open':''}" onclick="toggleMuscleGroup('${groupId}',this)">
           <span style="font-size:16px">${MUSCLE_EMOJI[muscle]||'💪'}</span>
@@ -1169,12 +1189,7 @@ function renderDayExercises(q) {
     }
   }
 
-  html += `</div><div class="flex mt16" style="gap:10px">
-    <button class="btn btn-primary" style="flex:1" onclick="saveDayBack()">Confirmar</button>
-    <button class="btn btn-secondary" style="flex:1" onclick="renderAssignModal()">Voltar</button>
-  </div>`;
-
-  document.getElementById('modal-assign-body').innerHTML = html;
+  listEl.innerHTML = html;
 
   // carrega thumbnails
   allExercises.forEach(async ex => {
