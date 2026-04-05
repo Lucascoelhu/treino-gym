@@ -8,77 +8,73 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#090909;--surface:#141414;--surface2:#1c1c1c;--border:#242424;--border2:#2e2e2e;
-  --accent:#e85d04;--accent2:#ff7a2f;--accent-dim:#2a1100;
-  --text:#f0f0f0;--text2:#888;--text3:#444;
-  --green:#4ade80;--green-bg:#071c11;--red:#f87171;--red-bg:#220d0d;
-  --purple:#a78bfa;--purple-bg:#130d23;
+  --bg:#090909;--sf:#141414;--sf2:#1c1c1c;--bd:#242424;--bd2:#2e2e2e;
+  --acc:#e85d04;--acc2:#ff7a2f;--adim:#2a1100;
+  --tx:#f0f0f0;--tx2:#888;--tx3:#444;
+  --gr:#4ade80;--gr-bg:#071c11;
+  --pu:#a78bfa;--pu-bg:#130d23;
 }
-body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-h1,h2,h3,.topbar-title,.section-title,.modal-title,.auth-card h2{font-family:'Syne',sans-serif}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 .screen{display:none;min-height:100vh}
 .screen.active{display:block}
 .auth-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:radial-gradient(ellipse at 50% 0%,#1f0d00 0%,var(--bg) 55%)}
-.auth-sub{color:var(--text2);font-size:14px;margin-bottom:28px;letter-spacing:.01em}
-.auth-card{background:var(--surface);border-radius:20px;padding:28px;width:100%;max-width:380px;border:1px solid var(--border2)}
-.auth-card h2{font-size:20px;font-weight:700;margin-bottom:20px}
+.auth-logo{font-size:32px;font-weight:700;margin-bottom:8px;letter-spacing:-1px}
+.auth-logo span{color:#e85d04}
+.auth-sub{color:var(--tx2);font-size:14px;margin-bottom:28px}
+.auth-card{background:var(--sf);border-radius:20px;padding:28px;width:100%;max-width:380px;border:1px solid var(--bd2)}
+.auth-card h2{font-size:20px;margin-bottom:20px;font-family:Syne,sans-serif;font-weight:800}
 .field{margin-bottom:14px}
-.field label{display:block;font-size:11px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.field input,.field select,.field textarea{width:100%;background:#0c0c0c;border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;font-family:'DM Sans',sans-serif;transition:border-color .15s}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field label{display:block;font-size:11px;color:var(--tx2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.field input,.field select,.field textarea{width:100%;background:#0c0c0c;border:1.5px solid var(--bd2);border-radius:10px;padding:11px 14px;color:var(--tx);font-size:14px;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--acc)}
 .field select{background:#0c0c0c}
 .field textarea{resize:vertical;min-height:60px}
-.btn{width:100%;padding:13px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
-.btn-primary:active{transform:translateY(0)}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--border2)}
-.btn-secondary:hover{background:#222}
-.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn{width:100%;padding:13px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--acc);color:#fff}
+.btn-primary:hover{background:var(--acc2);transform:translateY(-1px)}
+.btn-secondary{background:var(--sf2);color:var(--tx);border:1.5px solid var(--bd2)}
+.btn-secondary:hover{background:#242424}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px;border:none;cursor:pointer;font-weight:600;transition:all .15s}
 .btn-danger{background:#2a0e0e;color:#f87171;border:1px solid #4a1c1c}
-.btn-danger:hover{background:#3d1212}
-.auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--text2)}
-.auth-toggle a{color:var(--accent);cursor:pointer;font-weight:600}
-.msg{font-size:13px;padding:11px 14px;border-radius:10px;margin-bottom:14px;display:none;font-weight:500}
-.msg.error{background:var(--red-bg);color:var(--red);display:block;border:1px solid #4a1c1c}
-.msg.success{background:var(--green-bg);color:var(--green);display:block;border:1px solid #134d2a}
-.topbar{background:rgba(14,14,14,.95);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(16px)}
-.topbar-title{font-size:16px;font-weight:700;letter-spacing:-.01em}
-.topbar-right{display:flex;gap:8px;align-items:center}
-.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
-.badge{background:var(--accent);color:#fff;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.tabs{display:flex;background:rgba(14,14,14,.95);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;backdrop-filter:blur(16px)}
-.tabs::-webkit-scrollbar{display:none}
-.tab{flex:1;padding:13px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;white-space:nowrap;min-width:64px;letter-spacing:.04em;text-transform:uppercase}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.content{padding:14px}
-.section-title{font-size:15px;font-weight:700;margin-bottom:14px}
-.card{background:var(--surface);border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid var(--border)}
-.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-.tag-orange{background:var(--accent-dim);color:#fb923c}
-.tag-green{background:var(--green-bg);color:var(--green)}
-.tag-gray{background:#1a1a1a;color:var(--text2)}
-.exercise-card{background:#0d0d0d;border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid var(--border);display:flex;gap:12px;align-items:flex-start;transition:border-color .15s}
-.exercise-card:hover{border-color:var(--border2)}
+.auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:#888}
+.auth-toggle a{color:var(--acc);cursor:pointer;font-weight:600}
+.msg{font-size:13px;padding:10px;border-radius:8px;margin-bottom:14px;display:none}
+.msg.error{background:#220d0d;color:#f87171;display:block;border:1px solid #4a1c1c}
+.msg.success{background:var(--gr-bg);color:var(--gr);display:block;border:1px solid #134d2a}
+.topbar{background:rgba(14,14,14,.95);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:100;backdrop-filter:blur(16px)}
+.topbar-title{font-size:16px;font-weight:800;font-family:Syne,sans-serif}
+.topbar-right{display:flex;gap:10px;align-items:center}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.badge{background:var(--acc);color:#fff;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.tabs{display:flex;background:rgba(14,14,14,.95);border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none;backdrop-filter:blur(16px)}
+.tab{flex:1;padding:13px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--tx3);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;white-space:nowrap;min-width:64px;letter-spacing:.04em;text-transform:uppercase}
+.tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+.content{padding:16px}
+.section-title{font-size:16px;font-weight:600;margin-bottom:14px}
+.card{background:var(--sf);border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid var(--bd)}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.tag-orange{background:var(--adim);color:#fb923c}
+.tag-green{background:var(--gr-bg);color:var(--gr)}
+.tag-gray{background:#1a1a1a;color:var(--tx2)}
+.exercise-card{background:#0d0d0d;border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid var(--bd);display:flex;gap:12px;align-items:flex-start;transition:border-color .15s}
 .ex-info{flex:1;min-width:0}
 .ex-name{font-size:14px;font-weight:600;margin-bottom:3px}
-.ex-detail{font-size:12px;color:var(--text2);margin-bottom:5px}
-.ex-check{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.set-btn{padding:8px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.set-btn:hover{border-color:#3a3a3a;color:var(--text)}
-.set-btn.done{background:var(--green-bg);border-color:#1a6644;color:var(--green)}
-.day-circle{width:40px;height:40px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;font-family:'Syne',sans-serif}
+.ex-detail{font-size:12px;color:var(--tx2);margin-bottom:5px}
+.ex-check{display:flex;gap:8px;flex-wrap:wrap}
+.set-btn{padding:8px 12px;border-radius:8px;border:1.5px solid var(--bd2);background:var(--sf2);color:var(--tx2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.set-btn.done{background:var(--gr-bg);border-color:#1a6644;color:var(--gr)}
+.day-circle{width:40px;height:40px;border-radius:12px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;font-family:Syne,sans-serif}
 .progress-bar{height:5px;background:#1a1a1a;border-radius:3px;margin-top:10px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .4s ease}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:3px;transition:width .4s ease}
 .stat-row{display:flex;gap:10px;margin-bottom:14px}
-.stat-box{flex:1;background:#0d0d0d;border-radius:12px;padding:14px;text-align:center;border:1.5px solid var(--border)}
-.stat-num{font-size:26px;font-weight:800;color:var(--accent);font-family:'Syne',sans-serif;line-height:1.1}
-.stat-label{font-size:10px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
-.client-card{background:var(--surface);border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid var(--border)}
-.client-code{font-size:11px;color:var(--accent);font-family:monospace;background:var(--accent-dim);padding:3px 8px;border-radius:6px;display:inline-block;letter-spacing:.04em;font-weight:700}
+.stat-box{flex:1;background:#0d0d0d;border-radius:12px;padding:14px;text-align:center;border:1.5px solid var(--bd)}
+.stat-num{font-size:26px;font-weight:800;color:var(--acc);font-family:Syne,sans-serif;line-height:1.1}
+.stat-label{font-size:10px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.client-card{background:var(--sf);border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid var(--bd)}
+.client-code{font-size:11px;color:var(--acc);font-family:monospace;background:var(--adim);padding:3px 8px;border-radius:6px;display:inline-block;letter-spacing:.04em;font-weight:700}
 .flex{display:flex;gap:8px;align-items:center}
 .flex-between{display:flex;justify-content:space-between;align-items:center}
 .flex-wrap{display:flex;flex-wrap:wrap;gap:8px}
@@ -86,24 +82,24 @@ h1,h2,h3,.topbar-title,.section-title,.modal-title,.auth-card h2{font-family:'Sy
 .mt16{margin-top:16px}
 .mt24{margin-top:24px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:flex-end;justify-content:center;z-index:200;backdrop-filter:blur(6px)}
-.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:93vh;overflow-y:auto;padding:24px;border:1px solid var(--border2)}
-.modal-title{font-size:18px;font-weight:700;margin-bottom:20px}
-.modal-close{float:right;background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer;line-height:1;padding:0}
-.loader{display:flex;align-items:center;justify-content:center;min-height:160px;flex-direction:column;gap:12px;color:var(--text2);font-size:14px}
-.spinner{display:inline-block;width:20px;height:20px;border:2.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.modal{background:var(--sf);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:93vh;overflow-y:auto;padding:24px;border:1px solid var(--bd2)}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:20px;font-family:Syne,sans-serif}
+.modal-close{float:right;background:none;border:none;color:var(--tx2);font-size:24px;cursor:pointer;line-height:1;padding:0}
+.loader{display:flex;align-items:center;justify-content:center;min-height:160px;flex-direction:column;gap:12px;color:#888;font-size:14px}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid #333;border-top-color:#e85d04;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:48px 20px;color:var(--text3)}
-.empty-icon{font-size:40px;margin-bottom:12px;opacity:.6}
-.copy-btn{background:var(--surface2);border:1.5px solid var(--border2);color:var(--text2);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600}
-.copy-btn:hover{color:var(--text)}
+.empty{text-align:center;padding:48px 20px;color:var(--tx3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.copy-btn{background:var(--sf2);border:1.5px solid var(--bd2);color:var(--tx2);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600}
+.copy-btn:hover{color:var(--tx)}
 
 /* MULTI-GIF UPLOAD */
 .gif-upload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
-.gif-slot{position:relative;aspect-ratio:1;background:#0c0c0c;border:2px dashed var(--border2);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
-.gif-slot:hover{border-color:var(--accent);background:var(--accent-dim)}
+.gif-slot{position:relative;aspect-ratio:1;background:#0c0c0c;border:2px dashed var(--bd2);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.gif-slot:hover{border-color:var(--acc);background:var(--adim)}
 .gif-slot img{width:100%;height:100%;object-fit:cover}
-.gif-slot .add-icon{font-size:22px;color:var(--text3)}
-.gif-slot .remove-gif{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.85);border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center}
+.gif-slot .add-icon{font-size:22px;color:var(--tx3)}
+.gif-slot .remove-gif{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.8);border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center}
 .gif-slot:hover .remove-gif{display:flex}
 .gif-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 
@@ -112,110 +108,112 @@ h1,h2,h3,.topbar-title,.section-title,.modal-title,.auth-card h2{font-family:'Sy
 .carousel-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s}
 .carousel-wrap img.active{opacity:1}
 .carousel-dots{position:absolute;bottom:4px;left:0;right:0;display:flex;justify-content:center;gap:3px}
-.carousel-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.3)}
-.carousel-dot.active{background:var(--accent)}
+.carousel-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.4)}
+.carousel-dot.active{background:var(--acc)}
 .ex-emoji{width:90px;height:90px;border-radius:10px;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px}
 
 /* ADMIN GIF PREVIEW GRID */
 .admin-gif-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.admin-gif-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border)}
+.admin-gif-thumb{width:48px;height:48px;border-radius:6px;object-fit:cover;border:1px solid #333}
 
-.upload-hint{font-size:13px;color:var(--text2)}
+.upload-hint{font-size:13px;color:#888}
 .size-warning{font-size:11px;color:#fb923c;margin-top:6px}
-.upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.upload-zone:hover{border-color:var(--accent);background:var(--accent-dim)}
+.upload-zone{border:2px dashed #333;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.upload-zone:hover{border-color:#e85d04;background:#1a0a00}
 .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-
 /* GIF DETAIL MODAL */
-.gif-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto}
+.gif-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto}
 .gif-modal-inner{width:100%;max-width:500px;padding:20px}
-.gif-modal-close{background:none;border:none;color:var(--text2);font-size:28px;cursor:pointer;line-height:1;padding:0;align-self:flex-end;margin-bottom:8px}
-.gif-modal-img{width:100%;border-radius:16px;margin-bottom:16px;display:block}
+.gif-modal-close{background:none;border:none;color:#888;font-size:28px;cursor:pointer;line-height:1;padding:0;align-self:flex-end;margin-bottom:8px}
+.gif-modal-img{width:100%;border-radius:14px;margin-bottom:16px;display:block}
 .gif-nav{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
-.gif-nav-btn{background:var(--surface2);border:1.5px solid var(--border2);color:var(--text);border-radius:10px;padding:9px 20px;cursor:pointer;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif}
-.gif-nav-btn:disabled{opacity:.25;cursor:default}
+.gif-nav-btn{background:var(--sf2);border:1.5px solid var(--bd2);color:var(--tx);border-radius:10px;padding:9px 20px;cursor:pointer;font-size:14px;font-weight:600}
+.gif-nav-btn:disabled{opacity:.3;cursor:default}
 .gif-modal-dots{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
 .gif-modal-dot{width:8px;height:8px;border-radius:50%;background:#2a2a2a;cursor:pointer;transition:background .2s}
-.gif-modal-dot.active{background:var(--accent)}
-.instruction-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:16px;margin-bottom:12px}
-.instruction-title{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
-.instruction-text{font-size:14px;color:#ccc;line-height:1.65;white-space:pre-wrap}
+.gif-modal-dot.active{background:var(--acc)}
+.instruction-box{background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:16px;margin-bottom:12px}
+.instruction-title{font-size:11px;font-weight:700;color:var(--acc);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+.instruction-text{font-size:14px;color:#ccc;line-height:1.6;white-space:pre-wrap}
 
 /* HINT SÉRIE */
 .set-btn-wrap{position:relative;display:inline-block}
-.set-hint{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:10;animation:hintBounce 1s ease infinite}
-.set-hint::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--accent)}
+.set-hint{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:10;animation:hintBounce 1s ease infinite}
+.set-hint::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--acc)}
 @keyframes hintBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
 .set-btn.hint-target{box-shadow:0 0 0 3px rgba(232,93,4,.5);animation:hintPulse 1s ease infinite}
-@keyframes hintPulse{0%,100%{box-shadow:0 0 0 3px rgba(232,93,4,.5)}50%{box-shadow:0 0 0 6px rgba(232,93,4,.15)}}
+@keyframes hintPulse{0%,100%{box-shadow:0 0 0 3px rgba(232,93,4,.5)}50%{box-shadow:0 0 0 6px rgba(232,93,4,.2)}}
+
 
 /* AVATAR GRID */
 .avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
-.avatar-opt{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:all .2s;background:var(--surface)}
-.avatar-opt:hover{border-color:var(--accent);transform:scale(1.1)}
-.avatar-opt.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,93,4,.35);transform:scale(1.05)}
-.avatar-section-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;margin-top:4px;font-weight:600}
+.avatar-opt{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:all .2s;background:#1a1a1a}
+.avatar-opt:hover{border-color:#e85d04;transform:scale(1.1)}
+.avatar-opt.selected{border-color:#e85d04;box-shadow:0 0 0 3px rgba(232,93,4,.4);transform:scale(1.05)}
+.avatar-section-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:4px}
+/* AVATAR TABS */
 .avatar-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .avatar-tabs::-webkit-scrollbar{display:none}
-.avatar-tab-btn{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'DM Sans',sans-serif;font-weight:600}
-.avatar-tab-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.avatar-tab-btn{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1.5px solid var(--bd2);background:var(--sf2);color:var(--tx2);font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:600}
+.avatar-tab-btn.active{background:var(--acc);border-color:var(--acc);color:#fff}
+/* SPINNER para SVG carregando */
+.avatar-opt{position:relative}
 @keyframes avatarPop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 .avatar-opt{animation:avatarPop .2s ease}
 
-/* GRUPOS COLAPSÁVEIS */
-.muscle-group-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#0d0d0d;border:1.5px solid var(--border);cursor:pointer;margin-bottom:6px;user-select:none;transition:all .15s}
-.muscle-group-header:hover{background:var(--surface)}
-.muscle-group-header.open{background:var(--accent-dim);border-color:var(--accent)}
-.muscle-group-arrow{font-size:14px;color:var(--text3);transition:transform .2s;margin-left:auto}
-.muscle-group-header.open .muscle-group-arrow{transform:rotate(90deg);color:var(--accent)}
-.muscle-group-body{display:none;padding-left:2px;margin-bottom:8px}
+
+/* GRUPOS COLAPSÁVEIS NO ASSIGN */
+.muscle-group-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#0d0d0d;border:1.5px solid var(--bd);cursor:pointer;margin-bottom:6px;user-select:none;transition:all .15s}
+.muscle-group-header:hover{background:var(--sf)}
+.muscle-group-header.open{background:var(--adim);border-color:var(--acc)}
+.muscle-group-arrow{font-size:14px;color:var(--tx3);transition:transform .2s;margin-left:auto}
+.muscle-group-header.open .muscle-group-arrow{transform:rotate(90deg);color:var(--acc)}
+.muscle-group-body{display:none;padding-left:4px;margin-bottom:8px}
 .muscle-group-body.open{display:block}
 
-/* TOGGLE */
+/* TOGGLE MONTE SEU TREINO */
 .toggle-switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
 .toggle-switch input{opacity:0;width:0;height:0}
 .toggle-slider{position:absolute;inset:0;background:#2a2a2a;border-radius:20px;transition:.2s;cursor:pointer}
-.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#555;border-radius:50%;transition:.2s}
-input:checked+.toggle-slider{background:var(--accent)}
-input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked+.toggle-slider{background:var(--acc)}
+input:checked+.toggle-slider:before{transform:translateX(16px)}
 
-/* MONTE SEU TREINO */
-.free-ex-card{background:#0d0d0d;border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start}
-.free-ex-card:hover{border-color:var(--border2)}
-.variation-btn{background:var(--purple-bg);border:1.5px solid #2d1f5e;color:var(--purple);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:8px;font-family:'DM Sans',sans-serif}
-.variation-btn:hover{background:#220f4a;border-color:#5b3fd4}
-.variation-pill{display:inline-flex;align-items:center;gap:5px;background:#1a0d00;border:1.5px solid var(--accent-dim);border-radius:8px;padding:4px 10px;font-size:11px;color:#fb923c;margin:3px 2px;cursor:pointer;font-weight:600;transition:all .15s}
-.variation-pill:hover{border-color:var(--accent);color:var(--text)}
-
+/* ABA MONTE SEU TREINO */
+.free-ex-card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.free-ex-card:hover{border-color:#333}
+.variation-btn{background:var(--pu-bg);border:1.5px solid #2d1f5e;color:var(--pu);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:8px}
+.variation-btn:hover{background:#2d1f6e;border-color:#7c3aed}
+.variation-pill{display:inline-flex;align-items:center;gap:5px;background:#1a0d00;border:1.5px solid var(--adim);border-radius:8px;padding:4px 10px;font-size:11px;color:#fb923c;margin:3px 2px;cursor:pointer;font-weight:600;transition:all .15s}
+.variation-pill:hover{border-color:#e85d04;color:#fff}
 /* PROFILE */
 .avatar{cursor:pointer;transition:opacity .15s}
 .avatar:hover{opacity:.8}
 .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .profile-pic-wrap{position:relative;width:80px;height:80px;margin:0 auto 16px;cursor:pointer}
 .profile-pic-wrap .avatar{width:80px;height:80px;font-size:22px}
-.profile-pic-wrap .edit-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:20px}
+.profile-pic-wrap .edit-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:20px}
 .profile-pic-wrap:hover .edit-overlay{opacity:1}
 .profile-pic-wrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;border-radius:50%}
 
-/* SELETOR DE TREINO NA HOME */
-.treino-selector{margin-bottom:16px}
-.treino-option{display:flex;align-items:center;gap:12px;background:#0d0d0d;border:2px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .2s}
-.treino-option:hover{border-color:var(--border2);background:var(--surface)}
-.treino-option.selected{border-color:var(--accent);background:var(--accent-dim)}
+/* TREINO SELECTOR */
+.treino-selector{margin-bottom:4px}
+.treino-option{display:flex;align-items:center;gap:12px;background:#0d0d0d;border:2px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.treino-option:hover{border-color:var(--bd2);background:var(--sf)}
+.treino-option.selected-official{border-color:var(--acc);background:var(--adim)}
+.treino-option.selected-free{border-color:var(--pu);background:var(--pu-bg)}
 .treino-option-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.treino-option-info{flex:1;min-width:0}
 .treino-option-name{font-size:14px;font-weight:600;margin-bottom:2px}
-.treino-option-sub{font-size:12px;color:var(--text2)}
-.treino-option-check{font-size:20px;flex-shrink:0;opacity:0;transition:opacity .15s}
-.treino-option.selected .treino-option-check{opacity:1}
-
-/* ADMIN INLINE ADD */
-.inline-add-form{background:#0d0d0d;border:2px dashed var(--border2);border-radius:14px;padding:16px;margin-bottom:10px;display:none;animation:fadeIn .2s ease}
-.inline-add-form.open{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.add-ex-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:13px;width:100%;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Syne',sans-serif;letter-spacing:.02em}
-.add-ex-btn:hover{background:var(--accent2);transform:translateY(-1px)}
-.add-ex-btn:active{transform:translateY(0)}
+.treino-option-sub{font-size:12px;color:var(--tx2)}
+.treino-option-check{font-size:18px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.treino-option.selected-official .treino-option-check,.treino-option.selected-free .treino-option-check{opacity:1}
+/* INLINE ADD FORM */
+.inline-add-form{background:#0d0d0d;border:2px dashed var(--bd2);border-radius:14px;padding:16px;margin-bottom:12px;display:none}
+.inline-add-form.open{display:block;animation:fadeSlide .2s ease}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.add-ex-btn-float{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--acc);border:none;color:#fff;font-size:24px;font-weight:300;cursor:pointer;transition:all .15s;flex-shrink:0}
+.add-ex-btn-float:hover{background:var(--acc2);transform:scale(1.05)}
+.add-ex-btn-float.open{background:#333;font-size:20px}
 </style>
 </head>
 <body>
@@ -224,7 +222,7 @@ input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
 <div id="screen-auth" class="screen active">
   <div class="auth-wrap">
     <img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" class="app-logo" style="width:110px;height:110px;margin-bottom:4px;mix-blend-mode:screen">
-    <div class="auth-sub" style="font-size:15px;font-weight:500">Seu treino, seu progresso 🔥</div>
+    <div class="auth-sub">Seu treino, seu progresso</div>
     <div class="auth-card">
       <h2 id="auth-title">Entrar</h2>
       <div id="auth-msg" class="msg"></div>
@@ -275,7 +273,7 @@ input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
         <div style="font-size:15px;font-weight:700;color:#fff"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="216d544a624e444d495461494e554c40484d0f424e4c">[email&#160;protected]</a></div>
       </div>
       <div id="pix-copied" style="font-size:12px;color:#4ade80;margin-bottom:14px;min-height:18px"></div>
-      <button class="btn btn-secondary" onclick="logout()" style="margin-top:8px">Sair da conta</button>
+      <button class="btn btn-secondary" onclick="logout()">Sair</button>
     </div>
   </div>
 </div>
@@ -283,14 +281,8 @@ input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
 <!-- ADMIN -->
 <div id="screen-admin" class="screen">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:10px">
-      <img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" style="width:30px;height:30px;object-fit:contain;mix-blend-mode:screen">
-      <div>
-        <div class="topbar-title">Coelho Treino</div>
-        <div style="font-size:9px;color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase">Painel Admin</div>
-      </div>
-    </div>
-    <div class="topbar-right"><button class="btn-sm btn-secondary" onclick="logout()" style="font-size:12px">Sair</button></div>
+    <div style="display:flex;align-items:center;gap:10px"><img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" style="width:28px;height:28px;object-fit:contain;mix-blend-mode:screen"><div><div class="topbar-title" style="font-size:15px">Coelho Treino</div><div style="font-size:9px;color:var(--acc);font-weight:700;letter-spacing:.08em;text-transform:uppercase">Painel Admin</div></div></div>
+    <div class="topbar-right"><button class="btn-sm btn-secondary" onclick="logout()">Sair</button></div>
   </div>
   <div class="tabs">
     <div class="tab active" onclick="adminTab('clientes')">Clientes</div>
@@ -302,56 +294,51 @@ input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
       <div class="stat-box"><div class="stat-num" id="stat-clients">0</div><div class="stat-label">Clientes</div></div>
       <div class="stat-box"><div class="stat-num" id="stat-exercises">0</div><div class="stat-label">Exercícios</div></div>
     </div>
-    <div id="clients-list"><div class="loader"><div class="spinner"></div><span style="margin-top:4px">Carregando...</span></div></div>
+    <div id="clients-list"><div class="loader"><div class="spinner"></div>Carregando...</div></div>
   </div>
   <div id="admin-exercicios" class="content" style="display:none">
     <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center">
-      <input type="text" id="admin-ex-search" placeholder="🔍 Buscar exercício..." oninput="filterAdminExercises()" style="flex:1;background:#0c0c0c;border:1.5px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;font-family:DM Sans,sans-serif">
-      <button onclick="toggleInlineAddExercise()" id="admin-add-btn" style="width:44px;height:44px;border-radius:12px;background:var(--accent);border:none;color:#fff;font-size:22px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;font-weight:300">+</button>
+      <input type="text" id="admin-ex-search" placeholder="🔍 Buscar exercício..." oninput="filterAdminExercises()" style="flex:1;background:#0c0c0c;border:1.5px solid var(--bd2);border-radius:10px;padding:10px 14px;color:var(--tx);font-size:14px;outline:none">
+      <button class="add-ex-btn-float" id="admin-add-btn" onclick="toggleInlineAddExercise()">+</button>
     </div>
-
     <!-- FORMULÁRIO INLINE -->
     <div id="inline-add-form" class="inline-add-form">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-size:15px;font-weight:700;font-family:Syne,sans-serif" id="inline-form-title">Novo Exercício</div>
-        <button onclick="toggleInlineAddExercise()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
+        <div style="font-size:15px;font-weight:800;font-family:Syne,sans-serif" id="inline-form-title">Novo Exercício</div>
+        <button onclick="toggleInlineAddExercise()" style="background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer;padding:0;line-height:1">×</button>
       </div>
       <div class="field"><label>Nome</label><input type="text" id="ex-name-input" placeholder="Ex: Supino Reto"></div>
       <div class="field">
         <label>Grupo muscular</label>
         <div style="display:flex;gap:8px;align-items:center">
           <select id="ex-muscle" style="flex:1"></select>
-          <button type="button" onclick="openNewMuscleGroupModal()" style="background:#0c0c0c;border:1.5px dashed var(--border2);color:var(--text2);border-radius:10px;padding:9px 12px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Grupo</button>
+          <button type="button" onclick="event.stopPropagation();openNewMuscleGroupModal()" style="background:#0c0c0c;border:1.5px dashed var(--bd2);color:var(--tx2);border-radius:10px;padding:9px 12px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Grupo</button>
         </div>
       </div>
       <div class="field">
         <label>GIFs / Imagens (até 5)</label>
         <div class="gif-upload-grid" id="gif-upload-grid"></div>
-        <div style="font-size:11px;color:var(--text3)">Clique num slot para adicionar. Prefira GIFs abaixo de 800KB.</div>
+        <div style="font-size:11px;color:var(--tx3)">Clique num slot para adicionar. Prefira GIFs abaixo de 800KB.</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
         <div class="field" style="margin-bottom:0"><label>Séries</label><input type="number" id="ex-sets" value="3" min="1" max="10"></div>
         <div class="field" style="margin-bottom:0"><label>Reps</label><input type="text" id="ex-reps" placeholder="12 ou 8-12"></div>
         <div class="field" style="margin-bottom:0"><label>Descanso (s)</label><input type="number" id="ex-rest" value="60" min="10"></div>
       </div>
-      <div class="field"><label>Instruções de execução</label><textarea id="ex-instruction" placeholder="Descreva a execução do exercício..." style="min-height:80px"></textarea></div>
+      <div class="field"><label>Instruções de execução</label><textarea id="ex-instruction" placeholder="Descreva a execução..." style="min-height:80px"></textarea></div>
       <div class="field">
         <label>Variações (até 3)</label>
         <div id="variations-wrap"></div>
-        <button type="button" id="add-variation-btn" onclick="addVariationField()" style="background:#0c0c0c;border:1.5px dashed var(--border2);color:var(--text2);border-radius:10px;padding:9px;font-size:13px;cursor:pointer;width:100%;margin-top:6px;font-family:DM Sans,sans-serif">+ Adicionar variação</button>
+        <button type="button" id="add-variation-btn" onclick="addVariationField()" style="background:#0c0c0c;border:1.5px dashed var(--bd2);color:var(--tx2);border-radius:10px;padding:9px;font-size:13px;cursor:pointer;width:100%;margin-top:6px">+ Adicionar variação</button>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;background:#0c0c0c;border:1.5px solid var(--border2);border-radius:12px;padding:12px 14px;margin-bottom:16px">
-        <div>
-          <div style="font-size:13px;font-weight:600">Visível em "Meu Treino"</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px">Cliente pode adicionar ao treino livre</div>
-        </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#0c0c0c;border:1.5px solid var(--bd2);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+        <div><div style="font-size:13px;font-weight:600">Visível em "Meu Treino"</div><div style="font-size:11px;color:var(--tx2);margin-top:2px">Cliente pode adicionar ao treino livre</div></div>
         <label class="toggle-switch"><input type="checkbox" id="ex-free-visible"><span class="toggle-slider"></span></label>
       </div>
-      <button class="btn btn-primary" id="save-ex-btn" onclick="saveExercise()">Salvar Exercício</button>
+      <button class="btn btn-primary" id="save-ex-btn" onclick="saveExercise()" style="border-radius:12px">Salvar Exercício</button>
     </div>
-
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px">
-      <span style="font-size:11px;color:var(--text3)">Toggle = visível em "Meu Treino"</span>
+      <span style="font-size:11px;color:var(--tx3)">Toggle = visível em "Meu Treino"</span>
       <div style="display:flex;gap:6px">
         <button class="btn-sm btn-secondary" onclick="setAllFreeVisible(true)" style="font-size:11px">✅ Todos</button>
         <button class="btn-sm btn-secondary" onclick="setAllFreeVisible(false)" style="font-size:11px">❌ Nenhum</button>
@@ -360,11 +347,11 @@ input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
     <div id="exercises-list"><div class="loader"><div class="spinner"></div></div></div>
   </div>
   <div id="admin-tokens" class="content" style="display:none">
-    <div style="background:var(--surface);border:1.5px solid var(--border2);border-radius:16px;padding:18px;margin-bottom:14px">
-      <div style="font-size:16px;font-weight:700;font-family:Syne,sans-serif;margin-bottom:14px">🎫 Novo token de acesso</div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px">Gerar novo token</div>
       <div class="field"><label>Nome do cliente</label><input type="text" id="token-name" placeholder="Ex: Lucas Coelho"></div>
-      <div class="field"><label>Código (deixe vazio para gerar automático)</label><input type="text" id="token-code" placeholder="Ex: LUCAS2026" style="text-transform:uppercase"></div>
-      <button class="btn btn-primary" onclick="generateToken()" style="border-radius:12px">Gerar Token</button>
+      <div class="field"><label>Código (opcional)</label><input type="text" id="token-code" placeholder="Ex: LUCAS2026 (vazio = automático)" style="text-transform:uppercase"></div>
+      <button class="btn btn-primary" onclick="generateToken()">Gerar Token</button>
     </div>
     <div id="tokens-list"></div>
   </div>
@@ -373,19 +360,13 @@ input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
 <!-- CLIENT -->
 <div id="screen-client" class="screen">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:10px">
-      <img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" style="width:30px;height:30px;object-fit:contain;mix-blend-mode:screen">
-      <div>
-        <div id="client-name-top" style="font-size:15px;font-weight:700;font-family:Syne,sans-serif;line-height:1.1"></div>
-        <div style="font-size:10px;color:var(--accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Membro</div>
-      </div>
-    </div>
-    <div class="avatar" id="client-avatar" onclick="openProfileModal()" title="Editar perfil" style="width:38px;height:38px;font-size:14px;border:2px solid var(--accent);cursor:pointer">?</div>
+    <div style="display:flex;align-items:center;gap:10px"><img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" style="width:28px;height:28px;object-fit:contain;mix-blend-mode:screen"><div><div id="client-name-top" style="font-size:15px;font-weight:800;font-family:Syne,sans-serif;line-height:1.1"></div><div style="font-size:9px;color:var(--acc);font-weight:700;letter-spacing:.08em;text-transform:uppercase">Membro</div></div></div>
+    <div class="avatar" id="client-avatar" onclick="openProfileModal()" title="Editar perfil" style="width:38px;height:38px;font-size:14px;border:2px solid var(--acc);cursor:pointer">?</div>
   </div>
   <div class="tabs">
     <div class="tab active" onclick="clientTab('hoje')">Hoje</div>
-    <div class="tab" onclick="clientTab('semana')">Semana</div>
     <div class="tab" onclick="clientTab('historico')">Histórico</div>
+    <div class="tab" onclick="clientTab('semana')">Semana</div>
     <div class="tab" onclick="clientTab('monte')">Meu Treino</div>
   </div>
   <div id="client-hoje" class="content"></div>
@@ -394,15 +375,12 @@ input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
   <div id="client-monte" class="content" style="display:none"></div>
 </div>
 
-<!-- exercise form is now inline in admin-exercicios -->
-
+<!-- exercise form is inline in admin -->
 <!-- MODAL ASSIGN -->
-<div id="modal-assign" class="modal-overlay" style="display:none">
+<div id="modal-assign" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('modal-assign')">
   <div class="modal">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div class="modal-title" id="modal-assign-title" style="margin-bottom:0">Montar Treino</div>
-      <button onclick="closeModal('modal-assign')" style="background:none;border:none;color:var(--text2);font-size:26px;cursor:pointer;padding:0;line-height:1">×</button>
-    </div>
+    <button class="modal-close" onclick="closeModal('modal-assign')">×</button>
+    <div class="modal-title" id="modal-assign-title">Montar Treino</div>
     <div id="modal-assign-body"></div>
   </div>
 </div>
@@ -940,19 +918,17 @@ async function loadAdminData() {
       accessLabel = 'Sem acesso definido'; accessColor = '#888'; accessBg = '#222';
     }
     html += `<div class="client-card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div class="avatar" style="background:${avatarBg};width:42px;height:42px;font-size:15px;border:2px solid ${accessColor||'var(--border2)'};">${avatarInner}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:700;font-family:Syne,sans-serif">${u.name}</div>
-          <div class="client-code" style="margin-top:4px">${u.code}</div>
+      <div class="flex-between">
+        <div class="flex"><div class="avatar" style="background:${avatarBg}">${avatarInner}</div>
+          <div><div style="font-weight:600">${u.name}</div><div class="client-code mt8">${u.code}</div></div>
         </div>
-        <button class="btn-sm btn-primary" onclick="openAssignWorkout('${d.id}','${u.name}')" style="border-radius:8px;padding:8px 14px;font-size:12px">Treino</button>
+        <button class="btn-sm btn-primary" onclick="openAssignWorkout('${d.id}','${u.name}')">Treino</button>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase;background:${accessBg};color:${accessColor}">${accessLabel}</span>
-        <button class="btn-sm btn-secondary" onclick="renewAccess('${d.id}','${u.name}')" style="font-size:11px">+30 dias</button>
+      <div class="mt8 flex-between">
+        <span class="tag" style="background:${accessBg};color:${accessColor}">${accessLabel}</span>
+        <button class="btn-sm btn-secondary" onclick="renewAccess('${d.id}','${u.name}')">Renovar 30d</button>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--text3);font-family:monospace">${u.email}</div>
+      <div class="mt8"><span class="tag tag-gray">${u.email}</span></div>
     </div>`;
   });
   document.getElementById('clients-list').innerHTML = html || '<div class="empty"><div class="empty-icon">👥</div>Nenhum cliente</div>';
@@ -1041,14 +1017,13 @@ function toggleAdminGroup(groupId, header) {
 
 // ─── EXERCISES ────────────────────────────────────────────────────────────────
 
-let inlineFormOpen = false;
+let _inlineFormOpen = false;
 
 function toggleInlineAddExercise() {
   const form = document.getElementById('inline-add-form');
   const btn = document.getElementById('admin-add-btn');
-  inlineFormOpen = !inlineFormOpen;
-  if (inlineFormOpen) {
-    // Open form - reset to new exercise state
+  _inlineFormOpen = !_inlineFormOpen;
+  if (_inlineFormOpen) {
     editingExId = null;
     pendingGifs = [];
     document.getElementById('inline-form-title').textContent = 'Novo Exercício';
@@ -1065,18 +1040,17 @@ function toggleInlineAddExercise() {
     renderGifSlots();
     form.classList.add('open');
     btn.textContent = '×';
-    btn.style.background = '#333';
-    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    btn.classList.add('open');
+    form.scrollIntoView({behavior:'smooth',block:'start'});
   } else {
     form.classList.remove('open');
     btn.textContent = '+';
-    btn.style.background = 'var(--accent)';
+    btn.classList.remove('open');
   }
 }
 
 function openAddExercise() {
-  // redirect to inline form
-  inlineFormOpen = false;
+  _inlineFormOpen = false;
   toggleInlineAddExercise();
 }
 
@@ -1085,7 +1059,6 @@ async function openEditExercise(id) {
   if (!ex) return;
   editingExId = id;
   pendingGifs = [];
-  // Open inline form in edit mode
   const form = document.getElementById('inline-add-form');
   const btn = document.getElementById('admin-add-btn');
   document.getElementById('inline-form-title').textContent = 'Editar: ' + ex.name;
@@ -1101,9 +1074,9 @@ async function openEditExercise(id) {
   renderVariationFields();
   form.classList.add('open');
   btn.textContent = '×';
-  btn.style.background = '#333';
-  inlineFormOpen = true;
-  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  btn.classList.add('open');
+  _inlineFormOpen = true;
+  form.scrollIntoView({behavior:'smooth',block:'start'});
 
   // carrega gifs existentes nos slots
   renderGifSlots(); // mostra vazio enquanto carrega
@@ -1173,10 +1146,9 @@ async function saveExercise() {
     }
 
     filterAdminExercises();
-    // close inline form
     const form = document.getElementById('inline-add-form');
     const addBtn = document.getElementById('admin-add-btn');
-    if (form) { form.classList.remove('open'); addBtn.textContent='+'; addBtn.style.background='var(--accent)'; inlineFormOpen=false; }
+    if (form) { form.classList.remove('open'); addBtn.textContent='+'; addBtn.classList.remove('open'); _inlineFormOpen=false; }
   } catch(e) { alert('Erro ao salvar: '+e.message); console.error(e); }
 
   btn.textContent = editingExId ? 'Salvar Alterações' : 'Salvar Exercício';
@@ -1222,14 +1194,16 @@ async function loadTokens() {
   const el = document.getElementById('tokens-list');
   el.innerHTML = snap.docs.map(d => {
     const t = d.data();
-    return `<div class="card" style="border-radius:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:15px;font-weight:700;font-family:Syne,sans-serif">${t.name}</div>
-        <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;background:${t.used?'var(--green-bg)':'var(--accent-dim)'};color:${t.used?'var(--green)':'#fb923c'}">${t.used?'Usado':'Disponível'}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <code style="background:var(--accent-dim);color:var(--accent2);padding:6px 12px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:.04em;flex:1">${t.code}</code>
-        <button class="copy-btn" onclick="navigator.clipboard.writeText('${t.code}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='Copiar',2000)})" style="border-radius:8px;padding:6px 12px">Copiar</button>
+    return `<div class="card">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:600">${t.name}</div>
+          <div class="mt8 flex" style="gap:6px">
+            <code style="background:#1f1000;color:#fb923c;padding:4px 10px;border-radius:6px;font-size:14px">${t.code}</code>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('${t.code}').then(()=>alert('Copiado!'))">Copiar</button>
+          </div>
+        </div>
+        <span class="tag ${t.used?'tag-green':'tag-orange'}">${t.used?'Usado':'Disponível'}</span>
       </div>
     </div>`;
   }).join('') || '<div class="empty"><div class="empty-icon">🎫</div>Nenhum token</div>';
@@ -1258,21 +1232,21 @@ async function openAssignWorkout(uid, name) {
 
 function renderAssignModal() {
   const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'], keys=['mon','tue','wed','thu','fri','sat','sun'];
-  let html = '<div style="font-size:12px;color:var(--text2);margin-bottom:14px;letter-spacing:.01em">Toque num dia para editar os exercícios.</div>';
+  let html = '<div style="color:#888;font-size:13px;margin-bottom:14px">Clique num dia para editar.</div>';
   keys.forEach((key,i) => {
     const w = assignTemplate[key]||{}, count=(w.exercises||[]).length;
-    html += `<div style="background:var(--surface);border:1.5px solid ${count?'var(--accent-dim)':'var(--border)'};border-radius:14px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .15s" onclick="editDayWorkout('${key}')">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:12px;background:${count?'var(--accent)':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${count?'#fff':'var(--text3)'};flex-shrink:0;font-family:Syne,sans-serif">${days[i]}</div>
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:600">${w.label||'Descanso'}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">${count?count+' exercício(s)':'Sem treino'}</div>
+    html += `<div class="card" style="cursor:pointer" onclick="editDayWorkout('${key}')">
+      <div class="flex-between">
+        <div class="flex" style="gap:10px">
+          <div class="day-circle" style="width:36px;height:36px;font-size:12px">${days[i]}</div>
+          <div><div style="font-size:14px;font-weight:600">${w.label||'Descanso'}</div>
+          <div style="font-size:12px;color:#888">${count?count+' exercício(s)':'Sem treino'}</div></div>
         </div>
-        <span style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;background:${count?'var(--accent-dim)':'#1a1a1a'};color:${count?'#fb923c':'var(--text3)'}">${count?'Treino':'Off'}</span>
+        <span class="tag ${count?'tag-orange':'tag-gray'}">${count?'Treino':'Off'}</span>
       </div>
     </div>`;
   });
-  html += `<button class="btn btn-primary mt16" onclick="saveAssignTemplate()" style="border-radius:12px">💾 Salvar Programação</button>`;
+  html += `<button class="btn btn-primary mt16" onclick="saveAssignTemplate()">Salvar Programação</button>`;
   document.getElementById('modal-assign-body').innerHTML = html;
 }
 
@@ -1286,11 +1260,11 @@ function editDayWorkout(key) {
   body.innerHTML = `
     <div class="field"><label>Nome do treino</label><input type="text" id="day-label" value="${w.label||''}" placeholder="Ex: Peito e Tríceps"></div>
     <input type="text" id="assign-search" placeholder="🔍 Buscar exercício..."
-      style="width:100%;background:#0c0c0c;border:1.5px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px;font-family:DM Sans,sans-serif">
-    <div id="assign-ex-list" style="max-height:360px;overflow-y:auto;margin-bottom:16px"></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-primary" style="flex:1;border-radius:12px" onclick="saveDayBack()">✓ Confirmar</button>
-      <button class="btn btn-secondary" style="flex:1;border-radius:12px" onclick="renderAssignModal()">Voltar</button>
+      style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:12px">
+    <div id="assign-ex-list" style="max-height:360px;overflow-y:auto"></div>
+    <div class="flex mt16" style="gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveDayBack()">Confirmar</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="renderAssignModal()">Voltar</button>
     </div>`;
 
   // Listener no input — atualiza só a lista, sem recriar o input
@@ -1547,9 +1521,9 @@ async function saveProfile() {
   btn.disabled = false;
 }
 
-// ─── CLIENT ───────────────────────────────────────────────────────────────────
+// ─── CLIENT ─────────────────────────────────────────────────────────────────
 
-let _selectedWorkoutSource = null;
+let _selWorkout = null;
 
 async function loadClientData() {
   const name = currentUserData.name||'';
@@ -1564,24 +1538,24 @@ async function loadClientData() {
   const todayOfficial = template[dayKey];
   const todayFree = freeTemplate[dayKey];
   const el = document.getElementById('client-hoje');
+  const hasOff = (todayOfficial?.exercises?.length > 0);
+  const hasFree = (todayFree?.exercises?.length > 0);
 
-  const hasOfficial = todayOfficial?.exercises?.length > 0;
-  const hasFree = todayFree?.exercises?.length > 0;
-
-  if (hasOfficial && hasFree) {
-    if (!_selectedWorkoutSource) _selectedWorkoutSource = 'official';
-    renderWorkoutSelector(todayOfficial, todayFree, today, dayKey, todayStr, el, template, freeTemplate);
+  if (hasOff && hasFree) {
+    if (!_selWorkout) _selWorkout = 'official';
+    renderWorkoutSelector(todayOfficial, todayFree, today, dayKey, todayStr, el);
+    loadClientHistory();
+    renderClientWeek(template, freeTemplate);
     return;
   }
 
-  const todayWorkout = hasOfficial ? { ...todayOfficial, source:'official' }
-                     : hasFree ? { ...todayFree, source:'free' }
+  const todayWorkout = hasOff ? {...todayOfficial, source:'official'}
+                     : hasFree ? {...todayFree, source:'free'}
                      : null;
-
-  _selectedWorkoutSource = todayWorkout?.source || null;
+  _selWorkout = todayWorkout?.source||null;
 
   if (!todayWorkout) {
-    el.innerHTML = `<div class="empty mt24"><div class="empty-icon">🏖️</div><div style="font-size:16px;font-weight:600">Dia de descanso!</div><div style="margin-top:6px;font-size:13px;color:var(--text2)">${DAYS_FULL[today.getDay()]}</div></div>`;
+    el.innerHTML = `<div class="empty mt24"><div class="empty-icon">🏖️</div><div style="font-size:16px;font-weight:600">Dia de descanso!</div><div style="margin-top:6px;font-size:13px;color:var(--tx2)">${DAYS_FULL[today.getDay()]}</div></div>`;
   } else {
     await renderTodayWorkout(todayWorkout, today, todayStr, el);
   }
@@ -1589,144 +1563,138 @@ async function loadClientData() {
   renderClientWeek(template, freeTemplate);
 }
 
-function renderWorkoutSelector(official, free, today, dayKey, todayStr, el, template, freeTemplate) {
-  const sel = _selectedWorkoutSource || 'official';
-  let html = `<div style="padding:14px 14px 0">
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px">Escolha o treino de hoje</div>
-    <div class="treino-selector">
-      <div class="treino-option ${sel==='official'?'selected':''}" onclick="selectWorkoutSource('official','${dayKey}','${todayStr}')">
-        <div class="treino-option-icon" style="background:#2a1100">🏋️</div>
-        <div class="treino-option-info">
-          <div class="treino-option-name">${official.label||'Treino Personal'}</div>
-          <div class="treino-option-sub">${(official.exercises||[]).length} exercícios · Personal</div>
+function renderWorkoutSelector(official, free, today, dayKey, todayStr, el) {
+  const sel = _selWorkout||'official';
+  el.innerHTML = `
+    <div style="padding:14px 0 0">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tx2);margin-bottom:10px">Escolha o treino de hoje</div>
+      <div class="treino-selector">
+        <div class="treino-option ${sel==='official'?'selected-official':''}" onclick="selectWorkoutSource('official','${dayKey}','${todayStr}')">
+          <div class="treino-option-icon" style="background:var(--adim)">🏋️</div>
+          <div style="flex:1;min-width:0">
+            <div class="treino-option-name">${official.label||'Treino Personal'}</div>
+            <div class="treino-option-sub">${(official.exercises||[]).length} exercícios · Personal</div>
+          </div>
+          <div class="treino-option-check" style="color:var(--acc)">✓</div>
         </div>
-        <div class="treino-option-check" style="color:var(--accent)">✓</div>
-      </div>
-      <div class="treino-option ${sel==='free'?'selected':''}" onclick="selectWorkoutSource('free','${dayKey}','${todayStr}')">
-        <div class="treino-option-icon" style="background:var(--purple-bg)">✏️</div>
-        <div class="treino-option-info">
-          <div class="treino-option-name">${free.label||'Meu Treino'}</div>
-          <div class="treino-option-sub">${(free.exercises||[]).length} exercícios · Personalizado</div>
+        <div class="treino-option ${sel==='free'?'selected-free':''}" onclick="selectWorkoutSource('free','${dayKey}','${todayStr}')">
+          <div class="treino-option-icon" style="background:var(--pu-bg)">✏️</div>
+          <div style="flex:1;min-width:0">
+            <div class="treino-option-name">${free.label||'Meu Treino'}</div>
+            <div class="treino-option-sub">${(free.exercises||[]).length} exercícios · Personalizado</div>
+          </div>
+          <div class="treino-option-check" style="color:var(--pu)">✓</div>
         </div>
-        <div class="treino-option-check" style="color:var(--purple)">✓</div>
       </div>
     </div>
-  </div>
-  <div id="today-workout-container" style="padding:0 14px"></div>`;
-  el.innerHTML = html;
-
-  const workout = sel === 'official'
-    ? { ...official, source:'official' }
-    : { ...free, source:'free' };
-  renderTodayWorkout(workout, today, todayStr, document.getElementById('today-workout-container'));
-  loadClientHistory();
-  renderClientWeek(template, freeTemplate);
+    <div id="today-workout-body"></div>`;
+  const w = sel==='official' ? {...official,source:'official'} : {...free,source:'free'};
+  renderTodayWorkout(w, today, todayStr, document.getElementById('today-workout-body'));
 }
 
 async function selectWorkoutSource(source, dayKey, todayStr) {
-  _selectedWorkoutSource = source;
+  _selWorkout = source;
   const template = currentUserData.weeklyTemplate||{};
   const freeTemplate = currentUserData.clientFreeTemplate||{};
-  const today = new Date();
-  const official = template[dayKey];
-  const free = freeTemplate[dayKey];
-  const el = document.getElementById('client-hoje');
-  renderWorkoutSelector(official, free, today, dayKey, todayStr, el, template, freeTemplate);
+  renderWorkoutSelector(template[dayKey], freeTemplate[dayKey], new Date(), dayKey, todayStr, document.getElementById('client-hoje'));
 }
 
 async function renderTodayWorkout(todayWorkout, today, todayStr, el) {
   const exIds = todayWorkout.exercises;
   const exDocs = await Promise.all(exIds.map(id=>db.collection('exercises').doc(id).get()));
   const exercises = exDocs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()}));
-
-  if (exercises.length === 0) {
-    el.innerHTML = `<div class="empty mt24"><div class="empty-icon">⚠️</div><div>Exercícios não encontrados.</div></div>`;
-    return;
-  }
+  if (!exercises.length) { el.innerHTML=`<div class="empty mt24"><div class="empty-icon">⚠️</div><div>Exercícios não encontrados.</div></div>`; return; }
 
   const logRef = db.collection('logs').doc(`${currentUser.uid}_${todayStr}`);
-  let logDoc = null;
-  let completedSets = {};
-  try {
-    logDoc = await logRef.get();
-    completedSets = logDoc.exists ? (logDoc.data().completedSets||{}) : {};
-  } catch(e) {
-    console.warn('Sem permissão para ler logs', e);
-  }
+  let completedSets={};
+  try { const ld=await logRef.get(); completedSets=ld.exists?(ld.data().completedSets||{}):{};} catch(e){}
   let totalSets=0, doneSets=0;
 
-  const sourceBadge = todayWorkout.source === 'free'
-    ? `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--purple-bg);color:var(--purple);letter-spacing:.04em">MEU TREINO</span>`
-    : `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--accent-dim);color:#fb923c;letter-spacing:.04em">PERSONAL</span>`;
+  const badge = todayWorkout.source==='free'
+    ? `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--pu-bg);color:var(--pu);margin-left:6px">MEU TREINO</span>`
+    : `<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--adim);color:#fb923c;margin-left:6px">PERSONAL</span>`;
 
-  let html = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-top:4px">
+  let html=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;margin-top:4px">
     <div class="day-circle">${DAYS_PT[today.getDay()]}</div>
-    <div>
-      <div style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${todayWorkout.label||'Treino de hoje'} ${sourceBadge}</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:2px">${exercises.length} exercícios · ${DAYS_FULL[today.getDay()]}</div>
-    </div>
+    <div><div style="font-size:15px;font-weight:700;display:flex;align-items:center;flex-wrap:wrap;gap:4px">${todayWorkout.label||'Treino de hoje'}${badge}</div>
+    <div style="font-size:12px;color:var(--tx2);margin-top:2px">${exercises.length} exercícios · ${DAYS_FULL[today.getDay()]}</div></div>
   </div>`;
 
-  exercises.forEach(ex => {
-    totalSets += ex.sets;
-    const done = completedSets[ex.id]||[];
-    doneSets += done.length;
-    html += `<div class="exercise-card">
-      <div id="cgif-${ex.id}" onclick="openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" style="width:88px;height:88px;border-radius:12px;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;position:relative;overflow:hidden" title="Ver execução">${MUSCLE_EMOJI[ex.muscle]||'💪'}<div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.7);border-radius:5px;font-size:10px;padding:2px 5px;font-weight:600">👁</div></div>
-      <div class="ex-info">
-        <div class="ex-name">${ex.name}</div>
-        <div class="ex-detail">${ex.muscle} · ${ex.sets} séries · ${ex.reps} reps · ${ex.rest}s</div>
-        <div class="ex-check">`;
-    const firstPending = Array.from({length:ex.sets},(_,i)=>i+1).find(s=>!done.includes(s));
-    const hintAlreadySeen = localStorage.getItem('setHintSeen');
-    for (let s=1;s<=ex.sets;s++) {
-      const isDone = done.includes(s);
-      const isHint = !hintAlreadySeen && !isDone && s===firstPending && doneSets===0 && ex===exercises[0];
-      if(isHint){
-        html += `<span class="set-btn-wrap"><div class="set-hint">✅ Toque ao concluir!</div><button class="set-btn hint-target" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button></span>`;
-      } else {
-        html += `<button class="set-btn ${isDone?'done':''}" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button>`;
-      }
+  exercises.forEach(ex=>{
+    totalSets+=ex.sets; const done=completedSets[ex.id]||[]; doneSets+=done.length;
+    html+=`<div class="exercise-card">
+      <div id="cgif-${ex.id}" onclick="openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" style="width:88px;height:88px;border-radius:12px;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;position:relative;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}<div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.7);border-radius:4px;font-size:10px;padding:2px 5px">👁</div></div>
+      <div class="ex-info"><div class="ex-name">${ex.name}</div>
+      <div class="ex-detail">${ex.muscle} · ${ex.sets}s · ${ex.reps}r · ${ex.rest}s desc.</div>
+      <div class="ex-check">`;
+    const fp=Array.from({length:ex.sets},(_,i)=>i+1).find(s=>!done.includes(s));
+    const hs=localStorage.getItem('setHintSeen');
+    for(let s=1;s<=ex.sets;s++){
+      const isDone=done.includes(s), isHint=!hs&&!isDone&&s===fp&&doneSets===0&&ex===exercises[0];
+      html+=isHint
+        ?`<span class="set-btn-wrap"><div class="set-hint">✅ Toque ao concluir!</div><button class="set-btn hint-target" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button></span>`
+        :`<button class="set-btn ${isDone?'done':''}" id="set-${ex.id}-${s}" onclick="toggleSet('${ex.id}',${s},'${todayStr}')">Série ${s}</button>`;
     }
-    html += `</div></div></div>`;
+    html+=`</div></div></div>`;
   });
 
-  const pct = totalSets?Math.round(doneSets/totalSets*100):0;
-  html += `<div class="card mt16" style="border-radius:14px">
+  const pct=totalSets?Math.round(doneSets/totalSets*100):0;
+  html+=`<div class="card mt16">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <span style="font-size:13px;font-weight:600">Progresso do dia</span>
-      <span style="font-size:14px;font-weight:700;color:var(--accent)">${pct}%</span>
+      <span style="font-size:14px;font-weight:700;color:var(--acc)">${pct}%</span>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:${pct}%"></div></div>
-    <div style="font-size:12px;color:var(--text2);margin-top:6px">${doneSets} de ${totalSets} séries concluídas</div>
+    <div style="font-size:12px;color:var(--tx2);margin-top:6px">${doneSets} de ${totalSets} séries</div>
   </div>`;
 
-  const searchBar = `<input type="text" id="client-ex-search" placeholder="🔍 Buscar exercício..." oninput="filterClientExercises()" style="width:100%;background:#0c0c0c;border:1.5px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px;font-family:'DM Sans',sans-serif">`;
-  el.innerHTML = searchBar + html;
-  clientWorkouts = { exercises, completedSets, totalSets, doneSets, logRef, todayStr };
-
-  exercises.forEach(async ex => {
-    const srcs = await loadGifSrcs(ex);
-    if (srcs.length > 0) {
-      const container = document.getElementById('cgif-'+ex.id);
-      if (!container) return;
-      container.innerHTML = carousel_inner(ex.id, srcs);
-      const eye = document.createElement('div');
-      eye.style.cssText = 'position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,.7);border-radius:5px;font-size:10px;padding:2px 5px;font-weight:600;pointer-events:none';
-      eye.textContent = '👁';
-      container.appendChild(eye);
-      setTimeout(() => startCarousel(ex.id, srcs.length), 100);
+  const search=`<input type="text" id="client-ex-search" placeholder="🔍 Buscar exercício..." oninput="filterClientExercises()" style="width:100%;background:#0c0c0c;border:1.5px solid var(--bd2);border-radius:10px;padding:10px 14px;color:var(--tx);font-size:14px;outline:none;margin-bottom:12px">`;
+  el.innerHTML=search+html;
+  clientWorkouts={exercises,completedSets,totalSets,doneSets,logRef,todayStr};
+  exercises.forEach(async ex=>{
+    const srcs=await loadGifSrcs(ex);
+    if(srcs.length){
+      const c=document.getElementById('cgif-'+ex.id); if(!c)return;
+      c.innerHTML=carousel_inner(ex.id,srcs);
+      const e2=document.createElement('div');
+      e2.style.cssText='position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.7);border-radius:4px;font-size:10px;padding:2px 5px;pointer-events:none';
+      e2.textContent='👁'; c.appendChild(e2);
+      setTimeout(()=>startCarousel(ex.id,srcs.length),100);
     }
   });
+}
+
+async function toggleSet(exId, setNum, dateStr) {
+  const logDoc = await clientWorkouts.logRef.get();
+  let data = logDoc.exists?logDoc.data():{uid:currentUser.uid,date:dateStr,completedSets:{}};
+  const sets = (data.completedSets[exId]||[]).slice();
+  const idx = sets.indexOf(setNum);
+  if (idx>=0) sets.splice(idx,1); else sets.push(setNum);
+  if (!logDoc.exists) { data.completedSets[exId]=sets; await clientWorkouts.logRef.set({uid:currentUser.uid,date:dateStr,completedSets:data.completedSets}); }
+  else await clientWorkouts.logRef.update({[`completedSets.${exId}`]:sets});
+  // remove hint wrapper se existir
+  const rawBtn = document.getElementById(`set-${exId}-${setNum}`);
+  if(rawBtn){
+    const wrap = rawBtn.closest('.set-btn-wrap');
+    if(wrap){ wrap.replaceWith(rawBtn); localStorage.setItem('setHintSeen','1'); }
+    rawBtn.className='set-btn'+(sets.includes(setNum)?' done':'');
+    rawBtn.classList.remove('hint-target');
+  }
+  clientWorkouts.completedSets[exId]=sets;
+  let done=0,total=0;
+  clientWorkouts.exercises.forEach(ex=>{total+=ex.sets;done+=(clientWorkouts.completedSets[ex.id]||[]).length;});
+  const pct=total?Math.round(done/total*100):0;
+  const pf=document.getElementById('progress-fill');
+  if(pf) pf.style.width=pct+'%';
 }
 
 async function loadClientHistory() {
   const el = document.getElementById('client-historico');
   const snap = await db.collection('logs').where('uid','==',currentUser.uid).orderBy('date','desc').limit(20).get();
-  if (snap.empty) { el.innerHTML='<div class="empty mt24"><div class="empty-icon">📋</div><div style="font-size:15px;font-weight:600;margin-bottom:6px">Nenhum treino ainda</div><div style="font-size:13px;color:var(--text2)">Complete seu primeiro treino hoje!</div></div>'; return; }
+  if (snap.empty) { el.innerHTML='<div class="empty mt24"><div class="empty-icon">📋</div>Nenhum treino ainda</div>'; return; }
   const template = currentUserData.weeklyTemplate||{};
   const keyMap={0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
-  let html='<div style="padding:18px 16px 6px"><div style="font-size:19px;font-weight:800;font-family:Syne,sans-serif;margin-bottom:4px">Histórico</div><div style="font-size:13px;color:var(--text2)">Últimos treinos realizados</div></div><div style="padding:8px 12px 24px">';
+  let html='<div class="section-title">Histórico</div>';
   snap.docs.forEach(doc=>{
     const data=doc.data();
     const d=new Date(data.date+'T12:00:00');
@@ -1735,17 +1703,11 @@ async function loadClientHistory() {
     let done=0;
     Object.values(data.completedSets||{}).forEach(s=>done+=s.length);
     const label=d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'short'});
-    html+=`<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:14px;font-weight:600">${w.label||'Treino'}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:3px">${label}</div>
-        </div>
-        <span style="background:var(--green-bg);color:var(--green);font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.04em">${done} séries</span>
-      </div>
-    </div>`;
+    html+=`<div class="card"><div class="flex-between" style="margin-bottom:6px">
+      <div><div style="font-weight:600">${w.label||'Treino'}</div><div style="font-size:12px;color:#888">${label}</div></div>
+      <span class="tag tag-green">${done} séries</span>
+    </div></div>`;
   });
-  html+='</div>';
   el.innerHTML=html;
 }
 
@@ -1850,7 +1812,7 @@ async function toggleWeekDay(key) {
 }
 
 function clientTab(name) {
-  ['hoje','semana','historico','monte'].forEach((n,i)=>{
+  ['hoje','historico','semana','monte'].forEach((n,i)=>{
     document.querySelectorAll('#screen-client .tabs .tab')[i].className='tab'+(n===name?' active':'');
     document.getElementById('client-'+n).style.display=n===name?'block':'none';
   });
@@ -1948,37 +1910,29 @@ async function loadClientFreeEditor() {
 function renderClientFreeWeek() {
   const el = document.getElementById('client-monte');
   const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-  const daysFull=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
   const keys=['mon','tue','wed','thu','fri','sat','sun'];
   const todayKey=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-  let html = `
-    <div style="padding:18px 16px 6px">
-      <div style="font-size:19px;font-weight:800;font-family:Syne,sans-serif;margin-bottom:4px">Meu Treino</div>
-      <div style="font-size:13px;color:var(--text2)">Toque num dia para editar os exercícios</div>
-    </div>
-    <div style="padding:10px 12px 80px">`;
+  let html = `<div style="padding:16px 16px 4px;font-size:15px;font-weight:700">✏️ Meu Treino Semanal</div>
+    <div style="padding:0 16px 14px;font-size:12px;color:#666">Toque num dia para editar seus exercícios.</div>`;
   keys.forEach((key,i) => {
     const w = clientFreeTemplate[key]||{}, count=(w.exercises||[]).length, isToday=key===todayKey;
-    const accent = isToday ? '#6d28d9' : 'var(--border)';
-    const bg = isToday ? 'linear-gradient(135deg,#13092a,#1a0f3a)' : 'var(--surface)';
-    html += `<div style="border-radius:16px;padding:14px 16px;background:${bg};border:1.5px solid ${isToday?'#4c1d95':'var(--border)'};margin-bottom:8px;cursor:pointer;transition:border-color .15s" onclick="clientFreeEditDay('${key}')">
+    html += `<div style="margin:0 12px 8px;border-radius:14px;padding:14px 16px;background:#1a1a1a;border:1px solid ${isToday?'#7c3aed':'#222'};${isToday?'border-left:3px solid #7c3aed;background:#120d1f;':''};cursor:pointer" onclick="clientFreeEditDay('${key}')">
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:44px;height:44px;border-radius:12px;background:${isToday?'#6d28d9':'#1a1a1a'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
-          <div style="font-size:11px;font-weight:800;color:${isToday?'#fff':'var(--text2)'};font-family:Syne,sans-serif">${days[i]}</div>
+        <div style="width:42px;height:42px;border-radius:12px;background:${isToday?'#7c3aed':'#2a2a2a'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="font-size:11px;font-weight:700;color:${isToday?'#fff':'#888'}">${days[i]}</div>
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:600;color:${count?'var(--text)':'var(--text3)'}">${w.label||(count?'Treino':'Descanso')}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">${daysFull[i]}${count?' · '+count+(count>1?' exercícios':' exercício'):''}</div>
+          <div style="font-size:15px;font-weight:600;color:${count?'#fff':'#555'}">${w.label||(count?'Treino':'Descanso')}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px">${count?count+' exercício(s)':'Sem treino'}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          ${isToday?'<span style="background:#6d28d9;color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.06em">HOJE</span>':''}
-          <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${count?'var(--purple-bg)':'#161616'};color:${count?'var(--purple)':'var(--text3)'}">${count?count+'ex':'Off'}</span>
-          <span style="color:var(--text3);font-size:18px">›</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          ${isToday?'<span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">HOJE</span>':''}
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${count?'#1a1050':'#222'};color:${count?'#a78bfa':'#555'}">${count?'Treino':'Off'}</span>
+          <span style="color:#555;font-size:20px">›</span>
         </div>
       </div>
     </div>`;
   });
-  html += '</div>';
   el.innerHTML = html;
 }
 
@@ -1987,25 +1941,22 @@ function clientFreeEditDay(key) {
   const w = clientFreeTemplate[key]||{};
   clientFreeEditingExercises = [...(w.exercises||[])];
   const el = document.getElementById('client-monte');
-  const days=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const keys=['mon','tue','wed','thu','fri','sat','sun'];
   const dayLabel = days[keys.indexOf(key)];
   el.innerHTML = `
-    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;position:sticky;top:0;z-index:10;backdrop-filter:blur(16px)">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <button onclick="saveClientFreeDay()" style="background:none;border:none;color:var(--purple);font-size:26px;cursor:pointer;padding:0;line-height:1;width:32px">‹</button>
-        <div style="flex:1">
-          <div style="font-size:16px;font-weight:700;font-family:Syne,sans-serif">${dayLabel}</div>
-          <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Meu Treino Pessoal</div>
-        </div>
-        <button onclick="saveClientFreeDay()" style="background:#6d28d9;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Syne,sans-serif">Salvar</button>
-      </div>
-      <input type="text" id="cfree-label" value="${w.label||''}" placeholder="Nome do treino (ex: Peito e Ombro)"
-        style="width:100%;background:#0c0c0c;border:1.5px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:10px;font-family:DM Sans,sans-serif">
-      <input type="text" id="cfree-search" placeholder="🔍 Buscar exercício..."
-        style="width:100%;background:#0c0c0c;border:1.5px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;font-family:DM Sans,sans-serif">
+    <div style="padding:14px 16px 0;display:flex;align-items:center;gap:10px">
+      <button onclick="saveClientFreeDay()" style="background:none;border:none;color:#a78bfa;font-size:22px;cursor:pointer;padding:0;line-height:1">‹</button>
+      <div style="font-size:15px;font-weight:700;flex:1">${dayLabel} — Meu Treino</div>
+      <button onclick="saveClientFreeDay()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
     </div>
-    <div id="cfree-ex-list" style="padding:10px 10px 80px;"></div>`;
+    <div style="padding:10px 16px">
+      <input type="text" id="cfree-label" value="${w.label||''}" placeholder="Nome do treino (ex: Peito e Tríceps)"
+        style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:14px;outline:none;margin-bottom:10px">
+      <input type="text" id="cfree-search" placeholder="🔍 Buscar exercício..."
+        style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div id="cfree-ex-list" style="padding:0 4px;max-height:calc(100vh - 280px);overflow-y:auto"></div>`;
 
   document.getElementById('cfree-search').addEventListener('input', function() { renderClientFreeDayList(this.value); });
   renderClientFreeDayList('');
@@ -2186,7 +2137,7 @@ function openVariationGif(name) {
 }
 
 function closeModal(id) { document.getElementById(id).style.display='none'; }
-document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.style.display='none';}));
+document.addEventListener('DOMContentLoaded',()=>{ document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.style.display='none';})); });
 
 // ─── GIF DETAIL MODAL ─────────────────────────────────────────────────────────
 
@@ -2250,11 +2201,11 @@ function closeGifModal(e) {
 }
 </script>
 <!-- MODAL PERFIL -->
-<div id="modal-profile" class="modal-overlay" style="display:none">
+<div id="modal-profile" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('modal-profile')">
   <div class="modal" style="max-width:400px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
       <div class="modal-title" style="margin-bottom:0">Meu Perfil</div>
-      <button onclick="closeModal('modal-profile')" style="background:none;border:none;color:var(--text2);font-size:26px;cursor:pointer;line-height:1;padding:0">×</button>
+      <button onclick="closeModal('modal-profile')" style="background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;padding:0">×</button>
     </div>
     <div class="profile-pic-wrap">
       <div class="avatar" id="profile-avatar-big"></div>
@@ -2278,11 +2229,11 @@ function closeGifModal(e) {
 <!-- GIF DETAIL MODAL -->
 <div id="gif-detail-modal" class="gif-modal-overlay" style="display:none" onclick="closeGifModal(event)">
   <div class="gif-modal-inner">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-size:19px;font-weight:800;font-family:Syne,sans-serif" id="gif-modal-exname"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:18px;font-weight:700" id="gif-modal-exname"></div>
       <button class="gif-modal-close" onclick="document.getElementById('gif-detail-modal').style.display='none'">×</button>
     </div>
-    <div id="gif-modal-detail" style="font-size:13px;color:var(--text2);margin-bottom:14px;font-weight:500"></div>
+    <div id="gif-modal-detail" style="font-size:13px;color:#888;margin-bottom:14px"></div>
     <img id="gif-modal-img" class="gif-modal-img" src="">
     <div class="gif-nav">
       <button class="gif-nav-btn" id="gif-nav-prev" onclick="gifModalNav(-1)">&#8249; Anterior</button>
@@ -2299,11 +2250,11 @@ function closeGifModal(e) {
 
 
 <!-- MODAL NOVO GRUPO MUSCULAR -->
-<div id="modal-new-muscle" class="modal-overlay" style="display:none">
+<div id="modal-new-muscle" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('modal-new-muscle')">
   <div class="modal" style="max-width:380px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
       <div class="modal-title" style="margin-bottom:0">Novo Grupo Muscular</div>
-      <button onclick="closeModal('modal-new-muscle')" style="background:none;border:none;color:var(--text2);font-size:26px;cursor:pointer;line-height:1;padding:0">×</button>
+      <button onclick="closeModal('modal-new-muscle')" style="background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;padding:0">×</button>
     </div>
     <div class="field">
       <label>Nome do grupo</label>
@@ -2336,6 +2287,10 @@ async function saveNewMuscleGroup() {
     await createMuscleGroup(name, emoji);
     msg.textContent = `Grupo "${name}" criado com sucesso!`;
     msg.className = 'msg success'; msg.style.display = 'block';
+    // refresh the exercise list to show new group
+    if (typeof filterAdminExercises === 'function') filterAdminExercises();
+    // also refresh the muscle select in inline form
+    populateMuscleSelect();
     setTimeout(() => closeModal('modal-new-muscle'), 1200);
   } catch(e) {
     msg.textContent = 'Erro: ' + e.message; msg.className='msg error'; msg.style.display='block';
