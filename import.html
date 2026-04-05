@@ -132,6 +132,28 @@ textarea.inline:focus{border-color:#e85d04}
   <div style="margin-bottom:14px">
     <button class="btn btn-ai btn-ai-lg" id="gen-all-btn" onclick="generateAll()">✨ Gerar TODAS com Gemini</button>
   </div>
+  <!-- SELETOR DE GRUPO EM LOTE + CRIAR GRUPO -->
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Aplicar grupo a todos os exercícios</div>
+    <div style="display:flex;gap:8px;align-items:center" id="bulk-group-wrap">
+      <select id="bulk-muscle" class="inline" style="flex:1" onchange="applyBulkGroup(this.value)">
+        <option value="">— Selecionar grupo para todos —</option>
+      </select>
+      <button class="btn-secondary btn" onclick="showNewGroupForm()" style="white-space:nowrap;padding:7px 12px">+ Criar grupo</button>
+    </div>
+    <div id="new-group-form" style="display:none;margin-top:10px;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:14px">
+      <div style="font-size:12px;font-weight:700;color:#e85d04;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Novo grupo muscular</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input type="text" id="new-group-name" class="inline" placeholder="Nome (ex: Panturrilha)" style="flex:1">
+        <input type="text" id="new-group-emoji" class="inline" placeholder="🦵" maxlength="4" style="width:60px;text-align:center;font-size:20px">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1;padding:8px" onclick="saveNewGroupImport()">Criar e aplicar a todos</button>
+        <button class="btn btn-secondary" style="padding:8px 14px" onclick="document.getElementById('new-group-form').style.display='none'">Cancelar</button>
+      </div>
+      <div id="new-group-msg" style="font-size:12px;margin-top:8px;display:none"></div>
+    </div>
+  </div>
   <div id="ex-list-wrap"></div>
   <div class="flex-end">
     <button class="btn btn-secondary" onclick="clearAll()">🗑 Limpar tudo</button>
@@ -165,6 +187,7 @@ const ADMIN_EMAIL = "lukcoelhu@hotmail.com";
 auth.onAuthStateChanged(user => {
   if (user && user.email === ADMIN_EMAIL) {
     document.getElementById('login-wall').style.display = 'none';
+    loadMusclesFromFirestore();
   } else if (user) {
     auth.signOut();
   }
@@ -185,7 +208,35 @@ async function doLogin() {
   }
 }
 const CHUNK_SIZE = 700000;
-const MUSCLES = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
+const DEFAULT_MUSCLES = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','Perna','Glúteo','Abdômen','Cardio','Calistenia'];
+let MUSCLES = [...DEFAULT_MUSCLES];
+
+async function loadMusclesFromFirestore() {
+  try {
+    const snap = await db.collection('muscle_groups').orderBy('order').get();
+    if (!snap.empty) MUSCLES = snap.docs.map(d => d.data().name);
+  } catch(e) {}
+  renderBulkGroupSelector();
+}
+
+async function createMuscleGroupImport(name, emoji) {
+  if (MUSCLES.includes(name)) return;
+  const order = MUSCLES.length;
+  await db.collection('muscle_groups').doc(name).set({ name, emoji: emoji||'💪', order });
+  MUSCLES.push(name);
+  renderBulkGroupSelector();
+}
+
+function renderBulkGroupSelector() {
+  const wrap = document.getElementById('bulk-group-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <select id="bulk-muscle" class="inline" style="flex:1" onchange="applyBulkGroup(this.value)">
+      <option value="">— Selecionar grupo para todos —</option>
+      ${MUSCLES.map(m => `<option value="${m}">${m}</option>`).join('')}
+    </select>
+    <button class="btn-secondary btn" onclick="showNewGroupForm()" style="white-space:nowrap;padding:7px 12px">+ Criar grupo</button>`;
+}
 const TEMPLATE = `Preparação\n\nExecução\n\nDicas\n`;
 
 let exercises = [];
@@ -202,7 +253,7 @@ async function handleFiles(files) {
     const base64 = await toBase64(file);
     const name = fileNameToExName(file.name);
     //ALTERAR AQUI
-    exercises.push({ name, muscle: 'Costas', sets: 3, reps: '12', rest: 60, instruction: '', fileName: file.name, base64, aiStatus: 'idle', aiError: '' });
+    exercises.push({ name, muscle: MUSCLES[0]||'Costas', sets: 3, reps: '12', rest: 60, instruction: '', fileName: file.name, base64, aiStatus: 'idle', aiError: '' });
   }
   renderList();
 }
@@ -399,6 +450,35 @@ async function saveGifToFirestore(exerciseId, base64, index) {
   }
 
   return { mode: 'chunked', totalChunks };
+}
+
+function applyBulkGroup(muscle) {
+  if (!muscle) return;
+  exercises.forEach(ex => ex.muscle = muscle);
+  renderList();
+}
+
+function showNewGroupForm() {
+  document.getElementById('new-group-form').style.display = 'block';
+  document.getElementById('new-group-msg').style.display = 'none';
+  document.getElementById('new-group-name').focus();
+}
+
+async function saveNewGroupImport() {
+  const name = document.getElementById('new-group-name').value.trim();
+  const emoji = document.getElementById('new-group-emoji').value.trim() || '💪';
+  const msg = document.getElementById('new-group-msg');
+  if (!name) { msg.textContent='Digite o nome'; msg.style.color='#f87171'; msg.style.display='block'; return; }
+  if (MUSCLES.includes(name)) { msg.textContent='Grupo já existe'; msg.style.color='#f87171'; msg.style.display='block'; return; }
+  try {
+    await createMuscleGroupImport(name, emoji);
+    applyBulkGroup(name);
+    msg.textContent = `✅ Grupo "${name}" criado e aplicado a todos!`;
+    msg.style.color = '#4ade80'; msg.style.display = 'block';
+    setTimeout(() => { document.getElementById('new-group-form').style.display='none'; }, 1500);
+  } catch(e) {
+    msg.textContent = 'Erro: ' + e.message; msg.style.color='#f87171'; msg.style.display='block';
+  }
 }
 
 function log(msg, type='') {
