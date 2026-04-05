@@ -750,6 +750,35 @@ async function clearGifCache(exId) {
   } catch(e) {}
 }
 
+// ─── THUMBNAIL COMPRESSION ────────────────────────────────────────────────────
+const THUMB_CACHE = new Map(); // in-memory thumbnail cache
+
+function compressToThumb(base64, maxSize=120, quality=0.55) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ratio = Math.min(maxSize/img.width, maxSize/img.height, 1);
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(base64); // fallback to original
+    img.src = base64;
+  });
+}
+
+async function getThumb(ex) {
+  if (THUMB_CACHE.has(ex.id)) return THUMB_CACHE.get(ex.id);
+  const srcs = await loadGifSrcs(ex);
+  if (!srcs.length) return null;
+  const thumb = await compressToThumb(srcs[0]);
+  THUMB_CACHE.set(ex.id, thumb);
+  return thumb;
+}
+
 async function loadGifSrcs(ex) {
   // tenta o cache primeiro
   const cached = await getGifCache(ex.id);
@@ -894,10 +923,10 @@ function filterAdminExercises() {
   visibleIds.forEach(id => {
     const ex = allExercises.find(e=>e.id===id);
     if (!ex) return;
-    loadGifSrcs(ex).then(srcs => {
-      if (srcs.length > 0) {
-        const thumb = document.getElementById('exgif-admin-'+id);
-        if (thumb) thumb.innerHTML = `<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
+    getThumb(ex).then(thumb => {
+      if (thumb) {
+        const el = document.getElementById('exgif-admin-'+id);
+        if (el) el.innerHTML = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
       }
     });
   });
@@ -1112,10 +1141,10 @@ async function renderExercisesList() {
   el.innerHTML = html;
 
   for (const ex of allExercises) {
-    loadGifSrcs(ex).then(srcs => {
-      if (srcs.length > 0) {
-        const thumb = document.getElementById('exgif-admin-'+ex.id);
-        if (thumb) thumb.innerHTML = `<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
+    getThumb(ex).then(thumb => {
+      if (thumb) {
+        const el = document.getElementById('exgif-admin-'+ex.id);
+        if (el) el.innerHTML = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
       }
     });
   }
@@ -1497,15 +1526,15 @@ function renderDayExercisesList(q) {
 
   listEl.innerHTML = html;
 
-  // carrega thumbnails (seção selecionados + seção geral)
+  // carrega thumbnails comprimidos
   allExercises.forEach(async ex => {
-    const srcs = await loadGifSrcs(ex);
-    if (srcs.length > 0) {
-      const imgHtml = `<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
+    const thumb = await getThumb(ex);
+    if (thumb) {
+      const imgHtml = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
       const elSel = document.getElementById('exday-gif-sel-'+ex.id);
-      if(elSel) elSel.innerHTML = imgHtml;
+      if(elSel) elSel.innerHTML = imgHtml+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px">👁</div>';
       const el = document.getElementById('exday-gif-'+ex.id);
-      if(el) el.innerHTML = imgHtml;
+      if(el) el.innerHTML = imgHtml+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px">👁</div>';
     }
   });
 }
@@ -1964,11 +1993,11 @@ async function toggleWeekDay(key) {
 
   const allExs=[...offExs,...freeExs];
   allExs.forEach(async ex=>{
-    const srcs=await loadGifSrcs(ex);
-    if(!srcs.length) return;
+    const thumb = await getThumb(ex);
+    if(!thumb) return;
     [`wgif-${key}-off-${ex.id}`,`wgif-${key}-free-${ex.id}`].forEach(elId=>{
       const c=document.getElementById(elId);
-      if(c) c.innerHTML=carousel_inner(elId,srcs)+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px;pointer-events:none">👁</div>';
+      if(c) c.innerHTML=`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px;pointer-events:none">👁</div>';
     });
   });
   if(!clientWorkouts.exercises) clientWorkouts.exercises=[];
@@ -2208,12 +2237,12 @@ function renderClientFreeDayList(q) {
   listEl.innerHTML=html;
   if(q){const s=document.getElementById('cfree-search');if(s)s.value=q;}
 
-  // thumbnails
+  // thumbnails (compressed)
   allExercises.forEach(async ex=>{
-    const srcs=await loadGifSrcs(ex);
-    if(srcs.length){
-      const img=`<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
-      [`cfree-gif-${ex.id}`].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=img;});
+    const thumb = await getThumb(ex);
+    if(thumb){
+      const img=`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
+      [`cfree-gif-${ex.id}`].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=img+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px;z-index:1">👁</div>';});
     }
     if(!clientWorkouts.exercises)clientWorkouts.exercises=[];
     if(!clientWorkouts.exercises.find(e=>e.id===ex.id))clientWorkouts.exercises.push(ex);
