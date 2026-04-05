@@ -720,102 +720,162 @@ async function saveGifToFirestore(exerciseId, base64, index) {
   return { mode: 'chunked', totalChunks };
 }
 
-// ─── GIF CACHE (Cache Storage API) ───────────────────────────────────────────
-const GIF_CACHE_NAME = 'coelho-gifs-v1';
+// ─── GIF CACHE — Cache API (persistent) + Memory (instant) ───────────────────
+const GIF_CACHE_NAME = 'coelho-gifs-v2';
+const THUMB_CACHE_NAME = 'coelho-thumbs-v2';
+const _memGif = new Map();   // exId → srcs[] (full, in-memory)
+const _memThumb = new Map(); // exId → thumb string (in-memory)
+const _loading = new Map();  // exId → Promise (deduplicates parallel calls)
 
-function gifCacheKey(exId) {
-  return `https://gif-cache/${exId}`;
-}
+function _cacheKey(prefix, id) { return `https://gif-cache/${prefix}/${id}`; }
 
-async function getGifCache(exId) {
+async function _cacheGet(cacheName, key) {
   try {
-    const cache = await caches.open(GIF_CACHE_NAME);
-    const res = await cache.match(gifCacheKey(exId));
-    if (!res) return null;
-    return await res.json();
+    const c = await caches.open(cacheName);
+    const r = await c.match(key);
+    return r ? await r.json() : null;
   } catch(e) { return null; }
 }
 
-async function setGifCache(exId, srcs) {
+async function _cachePut(cacheName, key, data) {
   try {
-    const cache = await caches.open(GIF_CACHE_NAME);
-    await cache.put(gifCacheKey(exId), new Response(JSON.stringify(srcs), { headers: { 'Content-Type': 'application/json' } }));
+    const c = await caches.open(cacheName);
+    await c.put(key, new Response(JSON.stringify(data), {headers:{'Content-Type':'application/json'}}));
   } catch(e) {}
 }
 
 async function clearGifCache(exId) {
+  _memGif.delete(exId);
+  _memThumb.delete(exId);
+  _loading.delete(exId);
   try {
-    const cache = await caches.open(GIF_CACHE_NAME);
-    await cache.delete(gifCacheKey(exId));
+    const [c1,c2] = await Promise.all([caches.open(GIF_CACHE_NAME), caches.open(THUMB_CACHE_NAME)]);
+    await Promise.all([c1.delete(_cacheKey('gif',exId)), c2.delete(_cacheKey('thumb',exId))]);
   } catch(e) {}
 }
 
-// ─── THUMBNAIL COMPRESSION ────────────────────────────────────────────────────
-const THUMB_CACHE = new Map(); // in-memory thumbnail cache
-
-function compressToThumb(base64, maxSize=120, quality=0.55) {
-  return new Promise(resolve => {
+// Compress base64 image to small JPEG thumbnail
+function _compress(base64, size=160, q=0.6) {
+  return new Promise(res => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ratio = Math.min(maxSize/img.width, maxSize/img.height, 1);
-      canvas.width = Math.round(img.width * ratio);
-      canvas.height = Math.round(img.height * ratio);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      const c = document.createElement('canvas');
+      const r = Math.min(size/img.width, size/img.height, 1);
+      c.width = Math.round(img.width*r); c.height = Math.round(img.height*r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL('image/jpeg', q));
     };
-    img.onerror = () => resolve(base64); // fallback to original
+    img.onerror = () => res(base64);
     img.src = base64;
   });
 }
 
+// Load full GIF srcs — memory → Cache API → Firestore (parallel chunks)
+async function loadGifSrcs(ex) {
+  const id = ex.id;
+  if (_memGif.has(id)) return _memGif.get(id);
+
+  // Deduplicate: if already loading, wait for same promise
+  if (_loading.has(id)) return _loading.get(id);
+
+  const promise = (async () => {
+    // Try Cache API first
+    const cached = await _cacheGet(GIF_CACHE_NAME, _cacheKey('gif', id));
+    if (cached) { _memGif.set(id, cached); return cached; }
+
+    const gifs = ex.gifs || [];
+    let srcs = [];
+
+    if (gifs.length === 0) {
+      if (ex.gifMode === 'inline' && ex.gifData) {
+        srcs = [ex.gifData];
+      } else if (ex.gifMode === 'chunked' && ex.gifTotalChunks) {
+        // Fetch ALL chunks in parallel
+        const docs = await Promise.all(
+          Array.from({length: ex.gifTotalChunks}, (_,i) =>
+            db.collection('exercise_gifs').doc(`${id}_chunk_${i}`).get()
+          )
+        );
+        srcs = [docs.filter(d=>d.exists).map(d=>d.data().data).join('')];
+      }
+    } else {
+      // Fetch all GIFs in parallel, each with parallel chunks
+      srcs = await Promise.all(gifs.map(async (g, gi) => {
+        if (g.mode === 'inline') return g.data;
+        if (g.mode === 'chunked') {
+          const docs = await Promise.all(
+            Array.from({length: g.totalChunks}, (_,i) =>
+              db.collection('exercise_gifs').doc(`${id}_gif${gi}_chunk${i}`).get()
+            )
+          );
+          return docs.filter(d=>d.exists).map(d=>d.data().data).join('');
+        }
+        return null;
+      }));
+      srcs = srcs.filter(Boolean);
+    }
+
+    if (srcs.length) {
+      _memGif.set(id, srcs);
+      _cachePut(GIF_CACHE_NAME, _cacheKey('gif', id), srcs); // async, don't await
+    }
+    return srcs;
+  })();
+
+  _loading.set(id, promise);
+  const result = await promise;
+  _loading.delete(id);
+  return result;
+}
+
+// Get compressed thumbnail — memory → Cache API → compress from full GIF
 async function getThumb(ex) {
-  if (THUMB_CACHE.has(ex.id)) return THUMB_CACHE.get(ex.id);
+  const id = ex.id;
+  if (_memThumb.has(id)) return _memThumb.get(id);
+
+  // Try persistent thumb cache
+  const cached = await _cacheGet(THUMB_CACHE_NAME, _cacheKey('thumb', id));
+  if (cached) { _memThumb.set(id, cached); return cached; }
+
+  // Load full GIF and compress
   const srcs = await loadGifSrcs(ex);
   if (!srcs.length) return null;
-  const thumb = await compressToThumb(srcs[0]);
-  THUMB_CACHE.set(ex.id, thumb);
+
+  const thumb = await _compress(srcs[0]);
+  _memThumb.set(id, thumb);
+  _cachePut(THUMB_CACHE_NAME, _cacheKey('thumb', id), thumb); // async, don't await
   return thumb;
 }
 
-async function loadGifSrcs(ex) {
-  // tenta o cache primeiro
-  const cached = await getGifCache(ex.id);
-  if (cached) return cached;
+// Legacy aliases
+async function getGifCache(exId) { return _cacheGet(GIF_CACHE_NAME, _cacheKey('gif', exId)); }
+async function setGifCache(exId, srcs) { _cachePut(GIF_CACHE_NAME, _cacheKey('gif', exId), srcs); }
 
-  const gifs = ex.gifs || [];
-  let srcs = [];
+// ─── LAZY THUMBNAIL LOADER ────────────────────────────────────────────────────
+// Loads thumbnails only when the container enters the viewport
 
-  if (gifs.length === 0) {
-    // compatibilidade com formato antigo (gifMode único)
-    if (ex.gifMode === 'inline' && ex.gifData) { srcs = [ex.gifData]; }
-    else if (ex.gifMode === 'chunked' && ex.gifTotalChunks) {
-      const chunks = [];
-      for (let i = 0; i < ex.gifTotalChunks; i++) {
-        const d = await db.collection('exercise_gifs').doc(`${ex.id}_chunk_${i}`).get();
-        if (d.exists) chunks.push(d.data().data);
-      }
-      srcs = [chunks.join('')];
-    }
-  } else {
-    for (let gi = 0; gi < gifs.length; gi++) {
-      const g = gifs[gi];
-      if (g.mode === 'inline') { srcs.push(g.data); }
-      else if (g.mode === 'chunked') {
-        const chunks = [];
-        for (let i = 0; i < g.totalChunks; i++) {
-          const d = await db.collection('exercise_gifs').doc(`${ex.id}_gif${gi}_chunk${i}`).get();
-          if (d.exists) chunks.push(d.data().data);
-        }
-        srcs.push(chunks.join(''));
-      }
-    }
-  }
+const _thumbObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target;
+    const ex = JSON.parse(el.dataset.ex || 'null');
+    if (!ex) return;
+    _thumbObserver.unobserve(el);
+    getThumb(ex).then(thumb => {
+      if (!thumb || !el.isConnected) return;
+      const eyeHtml = el.dataset.eye === '1'
+        ? '<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px;z-index:1">👁</div>'
+        : '';
+      el.innerHTML = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">${eyeHtml}`;
+    });
+  });
+}, { rootMargin: '120px' }); // start loading 120px before visible
 
-  // salva no cache para próximas visitas
-  if (srcs.length > 0) setGifCache(ex.id, srcs);
-  return srcs;
+function lazyThumb(el, ex, showEye=true) {
+  el.dataset.ex = JSON.stringify({id:ex.id, gifs:ex.gifs, gifMode:ex.gifMode,
+    gifData:ex.gifData, gifTotalChunks:ex.gifTotalChunks, muscle:ex.muscle});
+  el.dataset.eye = showEye ? '1' : '0';
+  _thumbObserver.observe(el);
 }
 
 // ─── MULTI-GIF UPLOAD UI ──────────────────────────────────────────────────────
@@ -923,12 +983,8 @@ function filterAdminExercises() {
   visibleIds.forEach(id => {
     const ex = allExercises.find(e=>e.id===id);
     if (!ex) return;
-    getThumb(ex).then(thumb => {
-      if (thumb) {
-        const el = document.getElementById('exgif-admin-'+id);
-        if (el) el.innerHTML = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
-      }
-    });
+    const el = document.getElementById('exgif-admin-'+id);
+    if (el) lazyThumb(el, ex, false);
   });
 }
 
@@ -1141,12 +1197,8 @@ async function renderExercisesList() {
   el.innerHTML = html;
 
   for (const ex of allExercises) {
-    getThumb(ex).then(thumb => {
-      if (thumb) {
-        const el = document.getElementById('exgif-admin-'+ex.id);
-        if (el) el.innerHTML = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
-      }
-    });
+    const el = document.getElementById('exgif-admin-'+ex.id);
+    if (el) lazyThumb(el, ex, false);
   }
 }
 
@@ -1526,16 +1578,12 @@ function renderDayExercisesList(q) {
 
   listEl.innerHTML = html;
 
-  // carrega thumbnails comprimidos
-  allExercises.forEach(async ex => {
-    const thumb = await getThumb(ex);
-    if (thumb) {
-      const imgHtml = `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
-      const elSel = document.getElementById('exday-gif-sel-'+ex.id);
-      if(elSel) elSel.innerHTML = imgHtml+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px">👁</div>';
-      const el = document.getElementById('exday-gif-'+ex.id);
-      if(el) el.innerHTML = imgHtml+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px">👁</div>';
-    }
+  // lazy thumbnails
+  allExercises.forEach(ex => {
+    const elSel = document.getElementById('exday-gif-sel-'+ex.id);
+    if (elSel) lazyThumb(elSel, ex, true);
+    const el = document.getElementById('exday-gif-'+ex.id);
+    if (el) lazyThumb(el, ex, true);
   });
 }
 
@@ -1992,12 +2040,10 @@ async function toggleWeekDay(key) {
   detail.innerHTML=html;
 
   const allExs=[...offExs,...freeExs];
-  allExs.forEach(async ex=>{
-    const thumb = await getThumb(ex);
-    if(!thumb) return;
+  allExs.forEach(ex=>{
     [`wgif-${key}-off-${ex.id}`,`wgif-${key}-free-${ex.id}`].forEach(elId=>{
       const c=document.getElementById(elId);
-      if(c) c.innerHTML=`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px;pointer-events:none">👁</div>';
+      if(c) lazyThumb(c, ex, true);
     });
   });
   if(!clientWorkouts.exercises) clientWorkouts.exercises=[];
@@ -2237,13 +2283,10 @@ function renderClientFreeDayList(q) {
   listEl.innerHTML=html;
   if(q){const s=document.getElementById('cfree-search');if(s)s.value=q;}
 
-  // thumbnails (compressed)
-  allExercises.forEach(async ex=>{
-    const thumb = await getThumb(ex);
-    if(thumb){
-      const img=`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`;
-      [`cfree-gif-${ex.id}`].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=img+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px;z-index:1">👁</div>';});
-    }
+  // thumbnails — lazy load when visible
+  allExercises.forEach(ex=>{
+    const el = document.getElementById('cfree-gif-'+ex.id);
+    if (el) lazyThumb(el, ex, true);
     if(!clientWorkouts.exercises)clientWorkouts.exercises=[];
     if(!clientWorkouts.exercises.find(e=>e.id===ex.id))clientWorkouts.exercises.push(ex);
   });
