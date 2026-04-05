@@ -522,7 +522,14 @@ async function loadMuscleGroups() {
       MUSCLE_EMOJI = {};
       snap.docs.forEach(d => { MUSCLE_EMOJI[d.data().name] = d.data().emoji || '💪'; });
     }
-  } catch(e) { /* usa defaults */ }
+    // If exercises have muscle groups not in MUSCLE_ORDER, add them
+    allExercises.forEach(ex => {
+      if (ex.muscle && !MUSCLE_ORDER.includes(ex.muscle)) {
+        MUSCLE_ORDER.push(ex.muscle);
+        if (!MUSCLE_EMOJI[ex.muscle]) MUSCLE_EMOJI[ex.muscle] = '💪';
+      }
+    });
+  } catch(e) { console.warn('loadMuscleGroups error:', e); }
   populateMuscleSelect();
 }
 
@@ -725,7 +732,10 @@ function removeGif(i) {
 
 function filterAdminExercises() {
   const q = document.getElementById('admin-ex-search')?.value.toLowerCase().trim() || '';
-  const muscleOrder = MUSCLE_ORDER;
+  // Include any muscle groups present in exercises but not in MUSCLE_ORDER
+  const muscleOrder = [...MUSCLE_ORDER];
+  allExercises.forEach(ex => { if (ex.muscle && !muscleOrder.includes(ex.muscle)) muscleOrder.push(ex.muscle); });
+
   const grouped = {};
   muscleOrder.forEach(m => grouped[m] = []);
   allExercises.forEach(ex => {
@@ -897,6 +907,9 @@ async function loadAdminData() {
     db.collection('exercises').get()
   ]);
   allExercises = exSnap.docs.map(d=>({id:d.id,...d.data()}));
+  // Re-run loadMuscleGroups now that allExercises is populated
+  // so any exercise muscle groups not in muscle_groups collection still show up
+  await loadMuscleGroups();
   document.getElementById('stat-clients').textContent = usersSnap.size;
   document.getElementById('stat-exercises').textContent = exSnap.size;
 
@@ -941,12 +954,15 @@ async function renderExercisesList() {
   const el = document.getElementById('exercises-list');
   if (!allExercises.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🏋️</div>Nenhum exercício ainda</div>'; return; }
 
-  const muscleOrder = MUSCLE_ORDER;
+  // Build muscle order: MUSCLE_ORDER + any extra groups found in exercises
+  const muscleOrder = [...MUSCLE_ORDER];
+  allExercises.forEach(ex => { if (ex.muscle && !muscleOrder.includes(ex.muscle)) muscleOrder.push(ex.muscle); });
+
   const grouped = {};
   muscleOrder.forEach(m => grouped[m] = []);
   allExercises.forEach(ex => {
-    if (grouped[ex.muscle]) grouped[ex.muscle].push(ex);
-    else { grouped[ex.muscle] = grouped[ex.muscle] || []; grouped[ex.muscle].push(ex); }
+    if (!grouped[ex.muscle]) grouped[ex.muscle] = [];
+    grouped[ex.muscle].push(ex);
   });
 
   let html = '';
