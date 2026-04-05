@@ -214,6 +214,82 @@ input:checked+.toggle-slider:before{transform:translateX(16px)}
 .add-ex-btn-float{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--acc);border:none;color:#fff;font-size:24px;font-weight:300;cursor:pointer;transition:all .15s;flex-shrink:0}
 .add-ex-btn-float:hover{background:var(--acc2);transform:scale(1.05)}
 .add-ex-btn-float.open{background:#333;font-size:20px}
+
+/* ── MOBILE OPTIMIZATIONS ─────────────────────────────────────────── */
+/* Smooth scrolling everywhere */
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+*{-webkit-tap-highlight-color:transparent}
+.screen{overflow-x:hidden}
+
+/* Better touch targets */
+.tab{min-height:48px;display:flex;align-items:center;justify-content:center}
+.btn{min-height:48px;-webkit-appearance:none;border-radius:12px}
+.btn-sm{min-height:36px}
+.set-btn{min-height:40px;min-width:72px;border-radius:10px;font-size:13px}
+
+/* Cards — softer shadows and transitions */
+.card,.exercise-card,.client-card{transition:transform .15s,border-color .15s}
+.exercise-card:active{transform:scale(.99)}
+
+/* Inputs — prevent zoom on iOS */
+.field input,.field select,.field textarea,
+input[type=text],input[type=email],input[type=password],input[type=number],select,textarea{
+  font-size:16px!important;-webkit-appearance:none;border-radius:10px
+}
+
+/* Modals — full sheet on mobile */
+.modal{border-radius:20px 20px 0 0;padding:20px 16px 32px}
+.modal-overlay{align-items:flex-end}
+
+/* Topbar safe area */
+.topbar{padding-top:max(12px, env(safe-area-inset-top));
+        padding-left:max(16px, env(safe-area-inset-left));
+        padding-right:max(16px, env(safe-area-inset-right))}
+
+/* Content bottom padding for nav */
+.content{padding-bottom:24px}
+
+/* Smooth tab indicator */
+.tab{transition:color .2s,border-color .2s}
+
+/* Muscle group headers — easier tap */
+.muscle-group-header{min-height:48px}
+
+/* Day selector cards — active state */
+.treino-option:active{transform:scale(.98);opacity:.9}
+
+/* Progress bar — thicker on mobile */
+.progress-bar{height:6px;border-radius:4px}
+
+/* Exercise card image — no overflow issues */
+.carousel-wrap{border-radius:12px}
+
+/* Gif modal — full screen feel */
+.gif-modal-overlay{-webkit-overflow-scrolling:touch}
+.gif-modal-img{border-radius:12px}
+
+/* Smooth scrolling lists */
+#cfree-ex-list,#assign-ex-list,#exercises-list{
+  -webkit-overflow-scrolling:touch;
+  overflow-y:auto
+}
+
+/* Bottom safe area for sticky buttons */
+@supports(padding-bottom:env(safe-area-inset-bottom)){
+  .modal{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
+}
+
+/* Pulse animation for set buttons */
+.set-btn.done{animation:donePop .2s ease}
+@keyframes donePop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+
+/* Skeleton loading feel */
+.loader{opacity:.7}
+
+/* Active states for mobile tap feedback */
+.muscle-group-header:active,.treino-option:active,
+[onclick]:not(.set-btn):not(.btn):not(.btn-sm):active{opacity:.7;transition:opacity .1s}
+
 </style>
 </head>
 <body>
@@ -517,12 +593,13 @@ let MUSCLE_ORDER = ['Peito','Costas','Ombro','Bíceps','Tríceps','Antebraço','
 async function loadMuscleGroups() {
   try {
     const snap = await db.collection('muscle_groups').orderBy('order').get();
-    if (!snap.empty) {
-      MUSCLE_ORDER = snap.docs.map(d => d.data().name);
-      MUSCLE_EMOJI = {};
-      snap.docs.forEach(d => { MUSCLE_EMOJI[d.data().name] = d.data().emoji || '💪'; });
-    }
-    // If exercises have muscle groups not in MUSCLE_ORDER, add them
+    // Merge Firestore groups WITH defaults — never lose defaults
+    snap.docs.forEach(d => {
+      const name = d.data().name;
+      if (!MUSCLE_ORDER.includes(name)) MUSCLE_ORDER.push(name);
+      MUSCLE_EMOJI[name] = d.data().emoji || MUSCLE_EMOJI[name] || '💪';
+    });
+    // Also include any muscle from exercises not yet in order
     allExercises.forEach(ex => {
       if (ex.muscle && !MUSCLE_ORDER.includes(ex.muscle)) {
         MUSCLE_ORDER.push(ex.muscle);
@@ -1726,49 +1803,54 @@ async function loadClientHistory() {
   el.innerHTML=html;
 }
 
-function renderClientWeek(template, _freeTemplate) {
+function renderClientWeek(template, freeTemplate) {
+  freeTemplate = freeTemplate || currentUserData.clientFreeTemplate || {};
   const el = document.getElementById('client-semana');
   const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const daysFullPT=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
   const keys=['mon','tue','wed','thu','fri','sat','sun'];
   const todayKey=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-  let html='';
+  let html='<div style="padding:18px 16px 8px"><div style="font-size:19px;font-weight:800;font-family:Syne,sans-serif">Semana</div><div style="font-size:13px;color:var(--tx2);margin-top:4px">Seu treino semanal</div></div><div style="padding:0 12px 32px">';
   keys.forEach((key,i)=>{
-    const w=template[key]||{}, count=(w.exercises||[]).length, isToday=key===todayKey;
-    const hasEx = count > 0;
-    const borderStyle = isToday ? 'border-left:3px solid #e85d04;' : 'border-left:3px solid transparent;';
-    const bgStyle = isToday ? 'background:#1f1400;' : '';
-    const onclickAttr = hasEx ? 'onclick="toggleWeekDay(\'' + key + '\')"' : '';
-    html+=`<div style="border-radius:14px;padding:14px 16px;margin-bottom:8px;background:#1a1a1a;border:1px solid ${isToday?'#e85d04':'#222'};${borderStyle}${bgStyle}transition:border-color .2s;${hasEx?'cursor:pointer':''};" ${onclickAttr}>
+    const wOff=template[key]||{}, wFree=freeTemplate[key]||{};
+    const countOff=(wOff.exercises||[]).length, countFree=(wFree.exercises||[]).length;
+    const count = countOff + countFree;
+    const isToday=key===todayKey;
+    const label = wOff.label || wFree.label || (count?'Treino':'Descanso');
+    html+=`<div style="border-radius:16px;padding:14px 16px;margin-bottom:8px;background:${isToday?'linear-gradient(135deg,#1f0d00,#2a1200)':'var(--sf)'};border:1.5px solid ${isToday?'var(--acc)':'var(--bd)'};transition:all .2s;${count?'cursor:pointer':''}" ${count?`onclick="toggleWeekDay('${key}')"`:''}>
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:42px;height:42px;border-radius:12px;background:${isToday?'#e85d04':'#2a2a2a'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-          <div style="font-size:11px;font-weight:700;color:${isToday?'#fff':'#888'};line-height:1">${days[i]}</div>
+        <div style="width:44px;height:44px;border-radius:12px;background:${isToday?'var(--acc)':'#1a1a1a'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="font-size:11px;font-weight:800;color:${isToday?'#fff':'var(--tx2)'};font-family:Syne,sans-serif">${days[i]}</div>
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:600;color:${hasEx?'#fff':'#555'}">${w.label||(hasEx?'Treino':'Descanso')}</div>
-          <div style="font-size:12px;color:#666;margin-top:2px">${daysFullPT[i]}${count ? (' · ' + count + (count>1 ? ' exercícios' : ' exercício')) : ''}</div>
+          <div style="font-size:15px;font-weight:600;color:${count?'var(--tx)':'var(--tx3)'}">${label}</div>
+          <div style="font-size:12px;color:var(--tx2);margin-top:2px">${daysFullPT[i]}${count?' · '+count+(count>1?' exercícios':' exercício'):''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          ${isToday?'<span style="background:#e85d04;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">HOJE</span>':''}
-          ${hasEx?'<span id="week-arrow-'+key+'" style="color:#555;font-size:20px;line-height:1;transition:transform .25s;display:inline-block">&#x203A;</span>':'<span style="font-size:16px">&#x1F634;</span>'}
+          ${isToday?'<span style="background:var(--acc);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.06em">HOJE</span>':''}
+          ${count?`<span id="week-arrow-${key}" style="color:var(--tx3);font-size:20px;transition:transform .25s;display:inline-block">›</span>`:'<span style="font-size:16px;opacity:.4">😴</span>'}
         </div>
       </div>
-      <div id="week-detail-${key}" style="display:none;margin-top:14px;border-top:1px solid #2a2a2a;padding-top:12px"></div>
+      <div id="week-detail-${key}" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:12px"></div>
     </div>`;
   });
+  html+='</div>';
   el.innerHTML=html;
 }
 
 async function toggleWeekDay(key) {
   const detail = document.getElementById('week-detail-'+key);
   const arrow = document.getElementById('week-arrow-'+key);
+  if (!detail) return;
   const isOpen = detail.style.display !== 'none';
-  if (isOpen) { detail.style.display='none'; arrow.style.transform=''; return; }
-  arrow.style.transform = 'rotate(90deg)';
-  detail.style.display = 'block';
-  if (detail.dataset.loaded) return;
-  detail.dataset.loaded = '1';
-  detail.innerHTML = '<div style="color:#888;font-size:13px">Carregando...</div>';
+  if (isOpen) {
+    detail.style.display='none';
+    if(arrow) arrow.style.transform='';
+    return;
+  }
+  if(arrow) arrow.style.transform='rotate(90deg)';
+  detail.style.display='block';
+  detail.innerHTML='<div style="color:var(--tx2);font-size:13px;text-align:center;padding:8px">Carregando...</div>';
 
   const officialTemplate = currentUserData.weeklyTemplate||{};
   const freeTemplate = currentUserData.clientFreeTemplate||{};
@@ -1777,53 +1859,54 @@ async function toggleWeekDay(key) {
   const offIds = wOff.exercises||[];
   const freeIds = wFree.exercises||[];
 
-  async function fetchExercises(ids) {
-    if (!ids.length) return [];
+  async function fetchExs(ids) {
+    if(!ids.length) return [];
     const docs = await Promise.all(ids.map(id=>db.collection('exercises').doc(id).get()));
     return docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()}));
   }
 
-  function exListHtml(exercises, keyPrefix) {
-    if (!exercises.length) return '';
-    return exercises.map((ex,idx2) => {
-      const isLast = idx2 === exercises.length-1;
-      return `<div style="display:flex;gap:12px;align-items:center;padding:10px 0;${isLast?'':'border-bottom:1px solid #222'}">
-        <div id="wgif-${keyPrefix}-${ex.id}" style="width:52px;height:52px;border-radius:10px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;overflow:hidden;position:relative" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})">
+  function exHtml(exercises, prefix) {
+    return exercises.map((ex,i)=>{
+      const last=i===exercises.length-1;
+      return `<div style="display:flex;gap:12px;align-items:center;padding:10px 0;${last?'':'border-bottom:1px solid var(--bd)'}">
+        <div id="wgif-${prefix}-${ex.id}" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" style="width:52px;height:52px;border-radius:10px;background:var(--sf2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;overflow:hidden;position:relative">
           ${MUSCLE_EMOJI[ex.muscle]||'💪'}
+          <div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px">👁</div>
         </div>
-        <div style="flex:1;min-width:0;cursor:pointer" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})">
-          <div style="font-size:14px;font-weight:600;color:#fff">${ex.name}</div>
-          <div style="font-size:11px;color:#666;margin-top:3px">${ex.sets}x${ex.reps} · ${ex.rest}s</div>
+        <div style="flex:1;min-width:0" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" style="cursor:pointer">
+          <div style="font-size:14px;font-weight:600">${ex.name}</div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:3px">${ex.sets}x${ex.reps} · ${ex.rest}s</div>
         </div>
-        <div style="font-size:11px;color:#e85d04;background:#1f1000;padding:3px 8px;border-radius:6px;flex-shrink:0">${ex.muscle}</div>
+        <div style="font-size:10px;font-weight:700;color:var(--acc);background:var(--adim);padding:3px 8px;border-radius:6px;flex-shrink:0">${ex.muscle}</div>
       </div>`;
     }).join('');
   }
 
-  const [offExs, freeExs] = await Promise.all([fetchExercises(offIds), fetchExercises(freeIds)]);
-  let html = '';
-  if (offExs.length) {
-    html += `<div style="font-size:11px;font-weight:700;color:#fb923c;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">📋 Personal — ${wOff.label||'Treino'}</div>`;
-    html += exListHtml(offExs, key+'-off');
+  const [offExs, freeExs] = await Promise.all([fetchExs(offIds), fetchExs(freeIds)]);
+  let html='';
+  if(offExs.length){
+    html+=`<div style="font-size:10px;font-weight:700;color:#fb923c;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">📋 Personal — ${wOff.label||'Treino'}</div>`;
+    html+=exHtml(offExs, key+'-off');
   }
-  if (freeExs.length) {
-    if (offExs.length) html += '<div style="border-top:1px solid #2a2a2a;margin:10px 0"></div>';
-    html += `<div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">✏️ Meu treino — ${wFree.label||'Livre'}</div>`;
-    html += exListHtml(freeExs, key+'-free');
+  if(freeExs.length){
+    if(offExs.length) html+='<div style="border-top:1px solid var(--bd);margin:10px 0"></div>';
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--pu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✏️ Meu Treino — ${wFree.label||'Livre'}</div>`;
+    html+=exHtml(freeExs, key+'-free');
   }
-  if (!html) html = '<div style="color:#555;font-size:13px">Nenhum exercício</div>';
-  detail.innerHTML = html;
+  if(!html) html='<div style="color:var(--tx3);font-size:13px">Nenhum exercício</div>';
+  detail.innerHTML=html;
 
-  const allExs = [...offExs, ...freeExs];
-  allExs.forEach(async ex => {
-    const srcs = await loadGifSrcs(ex);
-    [`wgif-${key}-off-${ex.id}`, `wgif-${key}-free-${ex.id}`].forEach(elId => {
-      const c = document.getElementById(elId);
-      if (c && srcs.length) c.innerHTML = carousel_inner(elId, srcs);
+  const allExs=[...offExs,...freeExs];
+  allExs.forEach(async ex=>{
+    const srcs=await loadGifSrcs(ex);
+    if(!srcs.length) return;
+    [`wgif-${key}-off-${ex.id}`,`wgif-${key}-free-${ex.id}`].forEach(elId=>{
+      const c=document.getElementById(elId);
+      if(c) c.innerHTML=carousel_inner(elId,srcs)+'<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px;pointer-events:none">👁</div>';
     });
   });
-  if (!clientWorkouts.exercises) clientWorkouts.exercises = [];
-  allExs.forEach(ex => { if (!clientWorkouts.exercises.find(e=>e.id===ex.id)) clientWorkouts.exercises.push(ex); });
+  if(!clientWorkouts.exercises) clientWorkouts.exercises=[];
+  allExs.forEach(ex=>{if(!clientWorkouts.exercises.find(e=>e.id===ex.id))clientWorkouts.exercises.push(ex);});
 }
 
 function clientTab(name) {
@@ -1915,8 +1998,12 @@ let clientFreeEditingExercises = [];
 
 async function loadClientFreeEditor() {
   if (!allExercises.length) {
-    const snap = await db.collection('exercises').get();
+    const snap = await db.collection('exercises').where('freeVisible','==',true).get();
     allExercises = snap.docs.map(d=>({id:d.id,...d.data()}));
+    await loadMuscleGroups(); // ensure groups from these exercises are in MUSCLE_ORDER
+  } else {
+    // Re-run to ensure any new groups are captured
+    await loadMuscleGroups();
   }
   clientFreeTemplate = currentUserData.clientFreeTemplate || {};
   renderClientFreeWeek();
@@ -1925,30 +2012,34 @@ async function loadClientFreeEditor() {
 function renderClientFreeWeek() {
   const el = document.getElementById('client-monte');
   const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const daysFull=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
   const keys=['mon','tue','wed','thu','fri','sat','sun'];
   const todayKey=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-  let html = `<div style="padding:16px 16px 4px;font-size:15px;font-weight:700">✏️ Meu Treino Semanal</div>
-    <div style="padding:0 16px 14px;font-size:12px;color:#666">Toque num dia para editar seus exercícios.</div>`;
-  keys.forEach((key,i) => {
-    const w = clientFreeTemplate[key]||{}, count=(w.exercises||[]).length, isToday=key===todayKey;
-    html += `<div style="margin:0 12px 8px;border-radius:14px;padding:14px 16px;background:#1a1a1a;border:1px solid ${isToday?'#7c3aed':'#222'};${isToday?'border-left:3px solid #7c3aed;background:#120d1f;':''};cursor:pointer" onclick="clientFreeEditDay('${key}')">
+  let html=`<div style="padding:18px 16px 8px">
+    <div style="font-size:19px;font-weight:800;font-family:Syne,sans-serif">Meu Treino</div>
+    <div style="font-size:13px;color:var(--tx2);margin-top:4px">Monte seu treino semanal</div>
+  </div><div style="padding:0 12px 80px">`;
+  keys.forEach((key,i)=>{
+    const w=clientFreeTemplate[key]||{}, count=(w.exercises||[]).length, isToday=key===todayKey;
+    html+=`<div style="border-radius:16px;padding:14px 16px;margin-bottom:8px;background:${isToday?'linear-gradient(135deg,#13092a,#1a0f3a)':'var(--sf)'};border:1.5px solid ${isToday?'#4c1d95':'var(--bd)'};cursor:pointer;transition:all .2s;active:opacity:.8" onclick="clientFreeEditDay('${key}')">
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:42px;height:42px;border-radius:12px;background:${isToday?'#7c3aed':'#2a2a2a'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <div style="font-size:11px;font-weight:700;color:${isToday?'#fff':'#888'}">${days[i]}</div>
+        <div style="width:44px;height:44px;border-radius:12px;background:${isToday?'#6d28d9':'#1a1a1a'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="font-size:11px;font-weight:800;color:${isToday?'#fff':'var(--tx2)'};font-family:Syne,sans-serif">${days[i]}</div>
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:600;color:${count?'#fff':'#555'}">${w.label||(count?'Treino':'Descanso')}</div>
-          <div style="font-size:12px;color:#666;margin-top:2px">${count?count+' exercício(s)':'Sem treino'}</div>
+          <div style="font-size:15px;font-weight:600;color:${count?'var(--tx)':'var(--tx3)'}">${w.label||(count?'Treino':'Descanso')}</div>
+          <div style="font-size:12px;color:var(--tx2);margin-top:2px">${daysFull[i]}${count?' · '+count+(count>1?' exercícios':' exercício'):''}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          ${isToday?'<span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">HOJE</span>':''}
-          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${count?'#1a1050':'#222'};color:${count?'#a78bfa':'#555'}">${count?'Treino':'Off'}</span>
-          <span style="color:#555;font-size:20px">›</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          ${isToday?'<span style="background:#6d28d9;color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.06em">HOJE</span>':''}
+          <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${count?'var(--pu-bg)':'#161616'};color:${count?'var(--pu)':'var(--tx3)'}">${count?count+'ex':'Off'}</span>
+          <span style="color:var(--tx3);font-size:20px">›</span>
         </div>
       </div>
     </div>`;
   });
-  el.innerHTML = html;
+  html+='</div>';
+  el.innerHTML=html;
 }
 
 function clientFreeEditDay(key) {
@@ -1956,24 +2047,27 @@ function clientFreeEditDay(key) {
   const w = clientFreeTemplate[key]||{};
   clientFreeEditingExercises = [...(w.exercises||[])];
   const el = document.getElementById('client-monte');
-  const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const days=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
   const keys=['mon','tue','wed','thu','fri','sat','sun'];
   const dayLabel = days[keys.indexOf(key)];
-  el.innerHTML = `
-    <div style="padding:14px 16px 0;display:flex;align-items:center;gap:10px">
-      <button onclick="saveClientFreeDay()" style="background:none;border:none;color:#a78bfa;font-size:22px;cursor:pointer;padding:0;line-height:1">‹</button>
-      <div style="font-size:15px;font-weight:700;flex:1">${dayLabel} — Meu Treino</div>
-      <button onclick="saveClientFreeDay()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
-    </div>
-    <div style="padding:10px 16px">
-      <input type="text" id="cfree-label" value="${w.label||''}" placeholder="Nome do treino (ex: Peito e Tríceps)"
-        style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:14px;outline:none;margin-bottom:10px">
+  el.innerHTML=`
+    <div style="background:rgba(14,14,14,.97);border-bottom:1px solid var(--bd);padding:14px 16px;position:sticky;top:0;z-index:20;backdrop-filter:blur(16px)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <button onclick="saveClientFreeDay()" style="background:none;border:none;color:var(--pu);font-size:28px;cursor:pointer;padding:0;line-height:1;width:32px;flex-shrink:0">‹</button>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:800;font-family:Syne,sans-serif">${dayLabel}</div>
+          <div style="font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:1px">Meu Treino Pessoal</div>
+        </div>
+        <button onclick="saveClientFreeDay()" style="background:#6d28d9;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:Syne,sans-serif">Salvar</button>
+      </div>
+      <input type="text" id="cfree-label" value="${w.label||''}" placeholder="Nome do treino (ex: Peito e Ombro)"
+        style="width:100%;background:#0c0c0c;border:1.5px solid var(--bd2);border-radius:10px;padding:10px 14px;color:var(--tx);font-size:14px;outline:none;margin-bottom:10px;-webkit-appearance:none">
       <input type="text" id="cfree-search" placeholder="🔍 Buscar exercício..."
-        style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:14px;outline:none">
+        style="width:100%;background:#0c0c0c;border:1.5px solid var(--bd2);border-radius:10px;padding:10px 14px;color:var(--tx);font-size:14px;outline:none;-webkit-appearance:none">
     </div>
-    <div id="cfree-ex-list" style="padding:0 4px;max-height:calc(100vh - 280px);overflow-y:auto"></div>`;
+    <div id="cfree-ex-list" style="padding:10px 10px 120px"></div>`;
 
-  document.getElementById('cfree-search').addEventListener('input', function() { renderClientFreeDayList(this.value); });
+  document.getElementById('cfree-search').addEventListener('input', function(){renderClientFreeDayList(this.value);});
   renderClientFreeDayList('');
 }
 
@@ -2000,10 +2094,10 @@ function renderClientFreeDayList(q) {
         <span class="muscle-group-arrow" style="color:#4ade80">›</span>
       </div><div class="muscle-group-body open" id="${gId}">`;
       list.forEach(ex=>{
-        html+=`<div class="exercise-card" id="cfree-card-${ex.id}" onclick="toggleClientFreeEx('${ex.id}')" style="cursor:pointer;border-color:#e85d04;background:#1a0a00">
-          <div id="cfree-gif-${ex.id}" style="width:48px;height:48px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
-          <div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
-          <div style="font-size:18px">✅</div></div>`;
+        html+=`<div class="exercise-card" style="border-color:var(--acc);background:#1a0a00">
+          <div id="cfree-gif-${ex.id}" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" style="width:52px;height:52px;border-radius:10px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;cursor:pointer;position:relative">${MUSCLE_EMOJI[ex.muscle]||'💪'}<div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0;transition:.2s" class="gif-eye">👁</div></div>
+          <div class="ex-info" onclick="toggleClientFreeEx('${ex.id}')" style="cursor:pointer"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
+          <div onclick="toggleClientFreeEx('${ex.id}')" style="font-size:18px;cursor:pointer">✅</div></div>`;
       });
       html+=`</div>`;
     });
@@ -2029,10 +2123,10 @@ function renderClientFreeDayList(q) {
     </div><div class="muscle-group-body${isOpen?' open':''}" id="${gId}">`;
     list.forEach(ex=>{
       const sel=clientFreeEditingExercises.includes(ex.id);
-      html+=`<div class="exercise-card" id="cfree-card-${ex.id}" onclick="toggleClientFreeEx('${ex.id}')" style="cursor:pointer;border-color:${sel?'#e85d04':'#222'}${sel?';background:#1a0a00':''}">
-        <div id="cfree-gif-${ex.id}" style="width:48px;height:48px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
-        <div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
-        <div style="font-size:18px" id="cfree-chk-${ex.id}">${sel?'✅':'➕'}</div></div>`;
+      html+=`<div class="exercise-card" id="cfree-card-${ex.id}" style="border-color:${sel?'var(--acc)':'var(--bd)'};${sel?'background:#1a0a00':''}">
+        <div id="cfree-gif-${ex.id}" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" style="width:52px;height:52px;border-radius:10px;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;cursor:pointer;position:relative">${MUSCLE_EMOJI[ex.muscle]||'💪'}<div style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.6);border-radius:3px;font-size:9px;padding:1px 3px">👁</div></div>
+        <div class="ex-info" onclick="toggleClientFreeEx('${ex.id}')" style="cursor:pointer"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
+        <div onclick="toggleClientFreeEx('${ex.id}')" style="font-size:18px;cursor:pointer">${sel?'✅':'➕'}</div></div>`;
     });
     html+=`</div>`;
   });
