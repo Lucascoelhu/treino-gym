@@ -458,7 +458,12 @@ input[type=text],input[type=email],input[type=password],input[type=number],selec
 <div id="screen-client" class="screen">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px"><img src="https://raw.githubusercontent.com/Lucascoelhu/treino-gym/main/LogoCoelhoTreino.png" style="width:28px;height:28px;object-fit:contain;mix-blend-mode:screen"><div><div id="client-name-top" style="font-size:15px;font-weight:800;font-family:Syne,sans-serif;line-height:1.1"></div><div style="font-size:9px;color:var(--acc);font-weight:700;letter-spacing:.08em;text-transform:uppercase">Membro</div></div></div>
-    <div class="avatar" id="client-avatar" onclick="openProfileModal()" title="Editar perfil" style="width:38px;height:38px;font-size:14px;border:2px solid var(--acc);cursor:pointer">?</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="client-refresh-btn" onclick="clientRefresh()" style="background:none;border:none;color:var(--tx2);font-size:20px;cursor:pointer;padding:6px;border-radius:8px;line-height:1;transition:all .2s" title="Atualizar dados">
+        <span id="client-refresh-icon" style="display:inline-block;transition:transform .5s">↻</span>
+      </button>
+      <div class="avatar" id="client-avatar" onclick="openProfileModal()" title="Editar perfil" style="width:38px;height:38px;font-size:14px;border:2px solid var(--acc);cursor:pointer">?</div>
+    </div>
   </div>
   <div class="tabs">
     <div class="tab active" onclick="clientTab('hoje')">Hoje</div>
@@ -1116,6 +1121,19 @@ async function renderExercisesList() {
   }
 }
 
+async function adminRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  const icon = document.getElementById('refresh-icon');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+  if (icon) icon.style.transform = 'rotate(360deg)';
+  try {
+    await loadMuscleGroups();
+    await loadAdminData();
+  } catch(e) { console.error('Refresh error:', e); }
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  setTimeout(() => { if(icon) icon.style.transform = 'rotate(0deg)'; }, 500);
+}
+
 function adminTab(name) {
   ['clientes','exercicios','tokens'].forEach((n,i) => {
     document.querySelectorAll('.tabs .tab')[i].className = 'tab'+(n===name?' active':'');
@@ -1638,6 +1656,33 @@ async function saveProfile() {
 
 // ─── CLIENT ─────────────────────────────────────────────────────────────────
 
+async function clientRefresh() {
+  const btn = document.getElementById('client-refresh-btn');
+  const icon = document.getElementById('client-refresh-icon');
+  if (btn) btn.style.opacity = '.4';
+  if (icon) icon.style.transform = 'rotate(360deg)';
+  try {
+    // Reload user data from Firestore
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    if (doc.exists) {
+      currentUserData = doc.data();
+    }
+    // Reset week detail cache so it reloads
+    document.querySelectorAll('[id^="week-detail-"]').forEach(el => {
+      el.dataset.loaded = '';
+      el.style.display = 'none';
+      const key = el.id.replace('week-detail-','');
+      const arrow = document.getElementById('week-arrow-'+key);
+      if (arrow) arrow.style.transform = '';
+    });
+    await loadClientData();
+  } catch(e) { console.error('Client refresh error:', e); }
+  setTimeout(() => {
+    if (btn) btn.style.opacity = '1';
+    if (icon) icon.style.transform = 'rotate(0deg)';
+  }, 600);
+}
+
 async function loadClientData() {
   const name = currentUserData.name||'';
   document.getElementById('client-name-top').textContent = name.split(' ')[0];
@@ -1984,6 +2029,8 @@ async function toggleFreeVisible(id, val) {
   await db.collection('exercises').doc(id).update({ freeVisible: val });
   const ex = allExercises.find(e=>e.id===id);
   if (ex) ex.freeVisible = val;
+  // Update group header visibility counter without full re-render
+  filterAdminExercises();
 }
 
 async function setGroupFreeVisible(muscle, val) {
@@ -1994,19 +2041,17 @@ async function setGroupFreeVisible(muscle, val) {
     ex.freeVisible = val;
   });
   await batch.commit();
-  renderExercisesList();
+  filterAdminExercises();
 }
 
 async function setAllFreeVisible(val) {
-  const label = val ? 'visíveis' : 'invisíveis';
-  if (!confirm(`Deixar TODOS os exercícios ${label} no Monte seu Treino?`)) return;
   const batch = db.batch();
   allExercises.forEach(ex => {
     batch.update(db.collection('exercises').doc(ex.id), { freeVisible: val });
     ex.freeVisible = val;
   });
   await batch.commit();
-  renderExercisesList();
+  filterAdminExercises();
 }
 
 // ─── TOGGLE GRUPO MUSCULAR NO ASSIGN ─────────────────────────────────────────
