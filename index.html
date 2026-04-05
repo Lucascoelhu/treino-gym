@@ -541,6 +541,7 @@ async function createMuscleGroup(name, emoji) {
 }
 
 let currentUser = null, currentUserData = null, allExercises = [];
+let _selWorkout = null; // 'official' | 'free' | null
 let authMode = 'login';
 let assignUserId = '', assignTemplate = {};
 let editingDayKey = '', editingDayExercises = [];
@@ -1523,8 +1524,6 @@ async function saveProfile() {
 
 // ─── CLIENT ─────────────────────────────────────────────────────────────────
 
-let _selWorkout = null;
-
 async function loadClientData() {
   const name = currentUserData.name||'';
   document.getElementById('client-name-top').textContent = name.split(' ')[0];
@@ -1711,7 +1710,7 @@ async function loadClientHistory() {
   el.innerHTML=html;
 }
 
-function renderClientWeek(template) {
+function renderClientWeek(template, _freeTemplate) {
   const el = document.getElementById('client-semana');
   const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const daysFullPT=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
@@ -2293,7 +2292,9 @@ async function saveNewMuscleGroup() {
     populateMuscleSelect();
     setTimeout(() => closeModal('modal-new-muscle'), 1200);
   } catch(e) {
-    msg.textContent = 'Erro: ' + e.message; msg.className='msg error'; msg.style.display='block';
+    console.error('Erro ao criar grupo:', e);
+    msg.textContent = 'Erro: ' + (e.message || e.code || String(e));
+    msg.className='msg error'; msg.style.display='block';
   }
 }
 </script>
