@@ -937,11 +937,18 @@ async function renderExercisesList() {
     const list = grouped[muscle];
     if (!list || !list.length) return;
     const groupId = 'exgroup-' + muscle.replace(/[^a-zA-Z]/g,'');
+    const allOn = list.every(ex => ex.freeVisible);
+    const anyOn = list.some(ex => ex.freeVisible);
     html += `<div style="margin-bottom:8px">
       <div class="muscle-group-header" onclick="toggleAdminGroup('${groupId}', this)">
         <span style="font-size:18px">${MUSCLE_EMOJI[muscle]||'💪'}</span>
         <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#e85d04">${muscle}</span>
-        <span style="font-size:11px;color:#555;margin-left:2px">${list.length} exercício(s)</span>
+        <span style="font-size:11px;color:#555;margin-left:2px">${list.length} ex.</span>
+        <span style="font-size:10px;margin-left:4px;padding:2px 7px;border-radius:20px;background:${allOn?'#0d2c19':anyOn?'#3d1a00':'#222'};color:${allOn?'#4ade80':anyOn?'#fb923c':'#555'}">${allOn?'todos visíveis':anyOn?`${list.filter(e=>e.freeVisible).length}/${list.length} visíveis`:'nenhum visível'}</span>
+        <div style="display:flex;gap:4px;margin-left:auto;margin-right:6px" onclick="event.stopPropagation()">
+          <button style="font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid #166534;background:#0d2c19;color:#4ade80;cursor:pointer" onclick="setGroupFreeVisible('${muscle}',true)">✅ todos</button>
+          <button style="font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid #333;background:#222;color:#888;cursor:pointer" onclick="setGroupFreeVisible('${muscle}',false)">❌</button>
+        </div>
         <span class="muscle-group-arrow">▶</span>
       </div>
       <div class="muscle-group-body" id="${groupId}">`;
@@ -1745,6 +1752,17 @@ async function toggleFreeVisible(id, val) {
   await db.collection('exercises').doc(id).update({ freeVisible: val });
   const ex = allExercises.find(e=>e.id===id);
   if (ex) ex.freeVisible = val;
+}
+
+async function setGroupFreeVisible(muscle, val) {
+  const group = allExercises.filter(ex => ex.muscle === muscle);
+  const batch = db.batch();
+  group.forEach(ex => {
+    batch.update(db.collection('exercises').doc(ex.id), { freeVisible: val });
+    ex.freeVisible = val;
+  });
+  await batch.commit();
+  renderExercisesList();
 }
 
 async function setAllFreeVisible(val) {
