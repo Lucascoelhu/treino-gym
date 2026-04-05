@@ -310,7 +310,7 @@ input:checked+.toggle-slider:before{transform:translateX(16px)}
     <div class="tab active" onclick="clientTab('hoje')">Hoje</div>
     <div class="tab" onclick="clientTab('historico')">Histórico</div>
     <div class="tab" onclick="clientTab('semana')">Semana</div>
-    <div class="tab" onclick="clientTab('monte')">🔧 Monte</div>
+    <div class="tab" onclick="clientTab('monte')">✏️ Editar</div>
   </div>
   <div id="client-hoje" class="content"></div>
   <div id="client-historico" class="content" style="display:none"></div>
@@ -1486,13 +1486,21 @@ async function loadClientData() {
   setAvatarDisplay(document.getElementById('client-avatar'), name, currentUserData.photoBase64||null);
 
   const template = currentUserData.weeklyTemplate||{};
+  const freeTemplate = currentUserData.clientFreeTemplate||{};
   const today = new Date();
   const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][today.getDay()];
   const todayStr = today.toISOString().split('T')[0];
-  const todayWorkout = template[dayKey];
+  const todayOfficial = template[dayKey];
+  const todayFree = freeTemplate[dayKey];
   const el = document.getElementById('client-hoje');
 
-  if (!todayWorkout||!todayWorkout.exercises||!todayWorkout.exercises.length) {
+  // Decide qual treino mostrar: oficial tem prioridade, depois livre
+  const todayWorkout = (todayOfficial?.exercises?.length) ? { ...todayOfficial, source:'official' }
+                     : (todayFree?.exercises?.length) ? { ...todayFree, source:'free' }
+                     : null;
+
+  if (!todayWorkout) {
+    const hasAnyFreeToday = todayFree?.exercises?.length > 0;
     el.innerHTML = `<div class="empty mt24"><div class="empty-icon">🏖️</div><div>Hoje é dia de descanso!</div><div style="margin-top:8px;font-size:13px;color:#666">${DAYS_FULL[today.getDay()]}</div></div>`;
   } else {
     const exIds = todayWorkout.exercises;
@@ -1515,9 +1523,13 @@ async function loadClientData() {
     }
     let totalSets=0, doneSets=0;
 
+    const sourceBadge = todayWorkout.source === 'free'
+      ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#1a1050;color:#a78bfa;vertical-align:middle;margin-left:6px">MEU TREINO</span>`
+      : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#1f1000;color:#fb923c;vertical-align:middle;margin-left:6px">PERSONAL</span>`;
+
     let html = `<div class="flex mt8" style="gap:10px;align-items:center;margin-bottom:14px">
       <div class="day-circle">${DAYS_PT[today.getDay()]}</div>
-      <div><div style="font-size:15px;font-weight:600">${todayWorkout.label||'Treino de hoje'}</div>
+      <div><div style="font-size:15px;font-weight:600">${todayWorkout.label||'Treino de hoje'}${sourceBadge}</div>
       <div style="font-size:12px;color:#888">${exercises.length} exercícios · ${DAYS_FULL[today.getDay()]}</div></div>
     </div>`;
 
@@ -1571,7 +1583,7 @@ async function loadClientData() {
     });
   }
   loadClientHistory();
-  renderClientWeek(template);
+  renderClientWeek(template, freeTemplate);
 }
 
 async function toggleSet(exId, setNum, dateStr) {
@@ -1658,52 +1670,67 @@ async function toggleWeekDay(key) {
   const detail = document.getElementById('week-detail-'+key);
   const arrow = document.getElementById('week-arrow-'+key);
   const isOpen = detail.style.display !== 'none';
-  if (isOpen) {
-    detail.style.display = 'none';
-    arrow.style.transform = '';
-    return;
-  }
+  if (isOpen) { detail.style.display='none'; arrow.style.transform=''; return; }
   arrow.style.transform = 'rotate(90deg)';
   detail.style.display = 'block';
-  if (detail.innerHTML) return; // já carregou
+  if (detail.dataset.loaded) return;
+  detail.dataset.loaded = '1';
   detail.innerHTML = '<div style="color:#888;font-size:13px">Carregando...</div>';
-  const template = currentUserData.weeklyTemplate||{};
-  const w = template[key]||{};
-  const exIds = w.exercises||[];
-  if (!exIds.length) { detail.innerHTML = '<div style="color:#555;font-size:13px">Nenhum exercício</div>'; return; }
-  const exDocs = await Promise.all(exIds.map(id=>db.collection('exercises').doc(id).get()));
-  const exercises = exDocs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()}));
+
+  const officialTemplate = currentUserData.weeklyTemplate||{};
+  const freeTemplate = currentUserData.clientFreeTemplate||{};
+  const wOff = officialTemplate[key]||{};
+  const wFree = freeTemplate[key]||{};
+  const offIds = wOff.exercises||[];
+  const freeIds = wFree.exercises||[];
+
+  async function fetchExercises(ids) {
+    if (!ids.length) return [];
+    const docs = await Promise.all(ids.map(id=>db.collection('exercises').doc(id).get()));
+    return docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()}));
+  }
+
+  function exListHtml(exercises, keyPrefix) {
+    if (!exercises.length) return '';
+    return exercises.map((ex,idx2) => {
+      const isLast = idx2 === exercises.length-1;
+      return `<div style="display:flex;gap:12px;align-items:center;padding:10px 0;${isLast?'':'border-bottom:1px solid #222'}">
+        <div id="wgif-${keyPrefix}-${ex.id}" style="width:52px;height:52px;border-radius:10px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;overflow:hidden;position:relative" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})">
+          ${MUSCLE_EMOJI[ex.muscle]||'💪'}
+        </div>
+        <div style="flex:1;min-width:0;cursor:pointer" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})">
+          <div style="font-size:14px;font-weight:600;color:#fff">${ex.name}</div>
+          <div style="font-size:11px;color:#666;margin-top:3px">${ex.sets}x${ex.reps} · ${ex.rest}s</div>
+        </div>
+        <div style="font-size:11px;color:#e85d04;background:#1f1000;padding:3px 8px;border-radius:6px;flex-shrink:0">${ex.muscle}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const [offExs, freeExs] = await Promise.all([fetchExercises(offIds), fetchExercises(freeIds)]);
   let html = '';
-  exercises.forEach((ex,idx2) => {
-    const isLast = idx2 === exercises.length-1;
-    html += `<div style="display:flex;gap:12px;align-items:center;padding:10px 0;${isLast?'':'border-bottom:1px solid #222'}">
-      <div id="wgif-${key}-${ex.id}" style="width:52px;height:52px;border-radius:10px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;overflow:hidden;position:relative" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})" title="Ver execução">
-        ${MUSCLE_EMOJI[ex.muscle]||'💪'}
-        <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:18px" onmouseover="this.style.opacity=1;this.style.background='rgba(0,0,0,.5)'" onmouseout="this.style.opacity=0;this.style.background='rgba(0,0,0,0)'">👁</div>
-      </div>
-      <div style="flex:1;min-width:0;cursor:pointer" onclick="event.stopPropagation();openGifModal('${ex.id}',${ex.sets},'${ex.reps}',${ex.rest})">
-        <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">${ex.name}</div>
-        <div style="font-size:11px;color:#666;margin-top:3px">${ex.sets} séries · ${ex.reps} reps · ${ex.rest}s descanso</div>
-      </div>
-      <div style="flex-shrink:0;text-align:right">
-        <div style="font-size:11px;color:#e85d04;background:#1f1000;padding:3px 8px;border-radius:6px">${ex.muscle}</div>
-      </div>
-    </div>`;
-  });
+  if (offExs.length) {
+    html += `<div style="font-size:11px;font-weight:700;color:#fb923c;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">📋 Personal — ${wOff.label||'Treino'}</div>`;
+    html += exListHtml(offExs, key+'-off');
+  }
+  if (freeExs.length) {
+    if (offExs.length) html += '<div style="border-top:1px solid #2a2a2a;margin:10px 0"></div>';
+    html += `<div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">✏️ Meu treino — ${wFree.label||'Livre'}</div>`;
+    html += exListHtml(freeExs, key+'-free');
+  }
+  if (!html) html = '<div style="color:#555;font-size:13px">Nenhum exercício</div>';
   detail.innerHTML = html;
-  // carrega gifs
-  exercises.forEach(async ex => {
+
+  const allExs = [...offExs, ...freeExs];
+  allExs.forEach(async ex => {
     const srcs = await loadGifSrcs(ex);
-    if (srcs.length > 0) {
-      const container = document.getElementById(`wgif-${key}-${ex.id}`);
-      if (container) container.innerHTML = carousel_inner(ex.id+'-w'+key, srcs);
-    }
+    [`wgif-${key}-off-${ex.id}`, `wgif-${key}-free-${ex.id}`].forEach(elId => {
+      const c = document.getElementById(elId);
+      if (c && srcs.length) c.innerHTML = carousel_inner(elId, srcs);
+    });
   });
-  // garante que openGifModal tem acesso aos dados
   if (!clientWorkouts.exercises) clientWorkouts.exercises = [];
-  exercises.forEach(ex => {
-    if (!clientWorkouts.exercises.find(e=>e.id===ex.id)) clientWorkouts.exercises.push(ex);
-  });
+  allExs.forEach(ex => { if (!clientWorkouts.exercises.find(e=>e.id===ex.id)) clientWorkouts.exercises.push(ex); });
 }
 
 function clientTab(name) {
@@ -1711,7 +1738,7 @@ function clientTab(name) {
     document.querySelectorAll('#screen-client .tabs .tab')[i].className='tab'+(n===name?' active':'');
     document.getElementById('client-'+n).style.display=n===name?'block':'none';
   });
-  if(name==='monte') loadMonteTreino();
+  if(name==='monte') loadClientFreeEditor();
 }
 
 
@@ -1788,17 +1815,164 @@ function toggleMuscleGroup(groupId, header) {
 
 // ─── MONTE SEU TREINO (CLIENTE) ───────────────────────────────────────────────
 
-let monteLoaded = false;
-let monteExercises = [];
+// ─── CLIENT FREE EDITOR ────────────────────────────────────────────────────────
+let clientFreeTemplate = {};
+let clientFreeEditingKey = '';
+let clientFreeEditingExercises = [];
 
-async function loadMonteTreino() {
-  if (monteLoaded && monteExercises.length) { renderMonteTreino(); return; }
+async function loadClientFreeEditor() {
+  if (!allExercises.length) {
+    const snap = await db.collection('exercises').get();
+    allExercises = snap.docs.map(d=>({id:d.id,...d.data()}));
+  }
+  clientFreeTemplate = currentUserData.clientFreeTemplate || {};
+  renderClientFreeWeek();
+}
+
+function renderClientFreeWeek() {
   const el = document.getElementById('client-monte');
-  el.innerHTML = '<div class="loader"><div class="spinner"></div>Carregando exercícios...</div>';
-  const snap = await db.collection('exercises').where('freeVisible','==',true).get();
-  monteExercises = snap.docs.map(d => ({id:d.id,...d.data()}));
-  monteLoaded = true;
-  renderMonteTreino();
+  const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const keys=['mon','tue','wed','thu','fri','sat','sun'];
+  const todayKey=['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+  let html = `<div style="padding:16px 16px 4px;font-size:15px;font-weight:700">✏️ Meu Treino Semanal</div>
+    <div style="padding:0 16px 14px;font-size:12px;color:#666">Toque num dia para editar seus exercícios.</div>`;
+  keys.forEach((key,i) => {
+    const w = clientFreeTemplate[key]||{}, count=(w.exercises||[]).length, isToday=key===todayKey;
+    html += `<div style="margin:0 12px 8px;border-radius:14px;padding:14px 16px;background:#1a1a1a;border:1px solid ${isToday?'#7c3aed':'#222'};${isToday?'border-left:3px solid #7c3aed;background:#120d1f;':''};cursor:pointer" onclick="clientFreeEditDay('${key}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:12px;background:${isToday?'#7c3aed':'#2a2a2a'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="font-size:11px;font-weight:700;color:${isToday?'#fff':'#888'}">${days[i]}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:600;color:${count?'#fff':'#555'}">${w.label||(count?'Treino':'Descanso')}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px">${count?count+' exercício(s)':'Sem treino'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          ${isToday?'<span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">HOJE</span>':''}
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${count?'#1a1050':'#222'};color:${count?'#a78bfa':'#555'}">${count?'Treino':'Off'}</span>
+          <span style="color:#555;font-size:20px">›</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function clientFreeEditDay(key) {
+  clientFreeEditingKey = key;
+  const w = clientFreeTemplate[key]||{};
+  clientFreeEditingExercises = [...(w.exercises||[])];
+  const el = document.getElementById('client-monte');
+  const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const keys=['mon','tue','wed','thu','fri','sat','sun'];
+  const dayLabel = days[keys.indexOf(key)];
+  el.innerHTML = `
+    <div style="padding:14px 16px 0;display:flex;align-items:center;gap:10px">
+      <button onclick="saveClientFreeDay()" style="background:none;border:none;color:#a78bfa;font-size:22px;cursor:pointer;padding:0;line-height:1">‹</button>
+      <div style="font-size:15px;font-weight:700;flex:1">${dayLabel} — Meu Treino</div>
+      <button onclick="saveClientFreeDay()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">Salvar</button>
+    </div>
+    <div style="padding:10px 16px">
+      <input type="text" id="cfree-label" value="${w.label||''}" placeholder="Nome do treino (ex: Peito e Tríceps)"
+        style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:14px;outline:none;margin-bottom:10px">
+      <input type="text" id="cfree-search" placeholder="🔍 Buscar exercício..."
+        style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:14px;outline:none">
+    </div>
+    <div id="cfree-ex-list" style="padding:0 4px;max-height:calc(100vh - 280px);overflow-y:auto"></div>`;
+
+  document.getElementById('cfree-search').addEventListener('input', function() { renderClientFreeDayList(this.value); });
+  renderClientFreeDayList('');
+}
+
+function renderClientFreeDayList(q) {
+  q = (q||'').toLowerCase().trim();
+  const muscleOrder = MUSCLE_ORDER;
+  const listEl = document.getElementById('cfree-ex-list');
+  if (!listEl) return;
+  let html = '';
+
+  // Selecionados no topo
+  const selectedExs = allExercises.filter(ex => clientFreeEditingExercises.includes(ex.id));
+  if (selectedExs.length && !q) {
+    html += `<div style="padding:6px 12px 2px"><div style="font-size:11px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">✅ Selecionados (${selectedExs.length})</div>`;
+    const sg={};muscleOrder.forEach(m=>sg[m]=[]);
+    selectedExs.forEach(ex=>{if(!sg[ex.muscle])sg[ex.muscle]=[];sg[ex.muscle].push(ex);});
+    muscleOrder.forEach(muscle=>{
+      const list=sg[muscle];if(!list||!list.length)return;
+      const gId='cfree-sel-'+muscle.replace(/[^a-z]/gi,'');
+      html+=`<div class="muscle-group-header open" style="background:#0d2c19;border-color:#166534" onclick="toggleMuscleGroup('${gId}',this)">
+        <span>${MUSCLE_EMOJI[muscle]||'💪'}</span>
+        <span style="font-size:13px;font-weight:700;text-transform:uppercase;color:#4ade80">${muscle}</span>
+        <span style="font-size:11px;color:#555;margin-left:4px">${list.length} ex.</span>
+        <span class="muscle-group-arrow" style="color:#4ade80">›</span>
+      </div><div class="muscle-group-body open" id="${gId}">`;
+      list.forEach(ex=>{
+        html+=`<div class="exercise-card" id="cfree-card-${ex.id}" onclick="toggleClientFreeEx('${ex.id}')" style="cursor:pointer;border-color:#e85d04;background:#1a0a00">
+          <div id="cfree-gif-${ex.id}" style="width:48px;height:48px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
+          <div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
+          <div style="font-size:18px">✅</div></div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</div><div style="border-top:1px solid #2a2a2a;margin:8px 12px 10px"></div>`;
+  }
+
+  // Todos os grupos
+  const filtered = q ? allExercises.filter(ex=>ex.name.toLowerCase().includes(q)||ex.muscle.toLowerCase().includes(q)) : allExercises;
+  const grouped={};muscleOrder.forEach(m=>grouped[m]=[]);
+  filtered.forEach(ex=>{if(!grouped[ex.muscle])grouped[ex.muscle]=[];grouped[ex.muscle].push(ex);});
+  html += '<div style="padding:0 12px">';
+  muscleOrder.forEach(muscle=>{
+    const list=grouped[muscle];if(!list||!list.length)return;
+    const inDay=list.filter(ex=>clientFreeEditingExercises.includes(ex.id)).length;
+    const gId='cfree-mg-'+muscle.replace(/[^a-z]/gi,'');
+    const isOpen=inDay>0||!!q;
+    html+=`<div class="muscle-group-header${isOpen?' open':''}" onclick="toggleMuscleGroup('${gId}',this)">
+      <span>${MUSCLE_EMOJI[muscle]||'💪'}</span>
+      <span style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em">${muscle}</span>
+      <span style="font-size:11px;color:#555;margin-left:4px">${list.length} ex.</span>
+      ${inDay?`<span style="font-size:11px;background:#3d1a00;color:#fb923c;padding:2px 8px;border-radius:20px;margin-left:4px">${inDay} ✓</span>`:''}
+      <span class="muscle-group-arrow">›</span>
+    </div><div class="muscle-group-body${isOpen?' open':''}" id="${gId}">`;
+    list.forEach(ex=>{
+      const sel=clientFreeEditingExercises.includes(ex.id);
+      html+=`<div class="exercise-card" id="cfree-card-${ex.id}" onclick="toggleClientFreeEx('${ex.id}')" style="cursor:pointer;border-color:${sel?'#e85d04':'#222'}${sel?';background:#1a0a00':''}">
+        <div id="cfree-gif-${ex.id}" style="width:48px;height:48px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">${MUSCLE_EMOJI[ex.muscle]||'💪'}</div>
+        <div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.sets}x${ex.reps}</div></div>
+        <div style="font-size:18px" id="cfree-chk-${ex.id}">${sel?'✅':'➕'}</div></div>`;
+    });
+    html+=`</div>`;
+  });
+  html+='</div>';
+  listEl.innerHTML=html;
+  if(q){const s=document.getElementById('cfree-search');if(s)s.value=q;}
+
+  // thumbnails
+  allExercises.forEach(async ex=>{
+    const srcs=await loadGifSrcs(ex);
+    if(srcs.length){
+      const img=`<img src="${srcs[0]}" style="width:100%;height:100%;object-fit:cover">`;
+      [`cfree-gif-${ex.id}`].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=img;});
+    }
+    if(!clientWorkouts.exercises)clientWorkouts.exercises=[];
+    if(!clientWorkouts.exercises.find(e=>e.id===ex.id))clientWorkouts.exercises.push(ex);
+  });
+}
+
+function toggleClientFreeEx(id) {
+  const idx = clientFreeEditingExercises.indexOf(id);
+  if (idx>=0) clientFreeEditingExercises.splice(idx,1); else clientFreeEditingExercises.push(id);
+  const q = document.getElementById('cfree-search')?.value||'';
+  renderClientFreeDayList(q);
+}
+
+async function saveClientFreeDay() {
+  const label = document.getElementById('cfree-label')?.value.trim()||'';
+  clientFreeTemplate[clientFreeEditingKey] = { label, exercises: clientFreeEditingExercises };
+  await db.collection('users').doc(currentUser.uid).update({ clientFreeTemplate });
+  currentUserData.clientFreeTemplate = clientFreeTemplate;
+  renderClientFreeWeek();
+  renderClientWeek(currentUserData.weeklyTemplate||{}, clientFreeTemplate);
 }
 
 function renderMonteTreino(q) {
@@ -1876,13 +2050,10 @@ function renderMonteTreino(q) {
 }
 
 function openVariationGif(name) {
-  // busca o exercício por nome nas listas disponíveis
-  const ex = monteExercises.find(e=>e.name.toLowerCase()===name.toLowerCase())
-           || allExercises.find(e=>e.name.toLowerCase()===name.toLowerCase());
+  const ex = allExercises.find(e=>e.name.toLowerCase()===name.toLowerCase());
   if (ex) {
     openGifModal(ex.id, ex.sets, ex.reps, ex.rest);
   } else {
-    // se não encontrar, abre busca
     alert(`"${name}" — peça ao personal para cadastrar esse exercício!`);
   }
 }
